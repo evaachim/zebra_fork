@@ -3,7 +3,7 @@ create 100 instances of each resource for some users
 program to display results for each respective type
 */
 
-package generate_data //nolint // just don't lint the package name.
+package dazzle
 
 import (
 	"math/rand"
