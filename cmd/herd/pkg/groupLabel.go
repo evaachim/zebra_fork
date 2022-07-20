@@ -11,7 +11,6 @@ func GroupLabels(labels zebra.Labels, groupValue string) zebra.Labels {
 
 // group Value based on resource type.
 func GroupVal(resource zebra.Resource) string {
-
 	groupValue := resource.GetType()
 
 	return groupValue
