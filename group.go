@@ -11,8 +11,8 @@ import (
 var ErrLabel = errors.New("missing default mandatory group label")
 
 // The Labels.Validate function ensures that labels have the mandatory default group label.
-func (label Labels) Validate() error {
-	if _, found := label["group"]; found {
+func (l Labels) Validate() error {
+	if _, found := l["group"]; found {
 		return nil
 	}
 
