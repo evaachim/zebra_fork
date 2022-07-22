@@ -13,7 +13,6 @@ import (
 
 /*
 Build a zebra inventory command line client:
-
 zebra show servers
 zebra show users
 zebra show registrations
@@ -38,18 +37,7 @@ func main() {
 		Long:         "commands that will fetch and show zebra resources and users and use the RSA key for authentication",
 		Version:      version,
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			resource, _ := cmd.Flags().GetString("resource")
-
-			if resource != "" {
-				fmt.Println("Need method to fetch resource")
-				getResourceWithFlag(resource)
-			} else {
-
-				return ErrNoCmd
-			}
-			return nil
-		},
+		RunE:         run,
 	}
 
 	zebraCmd.Flags().String("zebra_cli", path.Join(
@@ -61,7 +49,7 @@ func main() {
 		"root directory of the  cli inventory",
 	)
 
-	zebraCmd.PersistentFlags().String("resource", "", "Name of resource to fetch, use singular")
+	zebraCmd.PersistentFlags().String("zebra", "", "Name of resource to fetch, use singular")
 
 	if err := zebraCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -108,4 +96,17 @@ func GetUserKey() string {
 	fmt.Scanln(&key)
 
 	return key
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	resource, _ := cmd.Flags().GetString("zebra")
+
+	if resource != "" {
+		fmt.Println("Need method to fetch zebra ", resource)
+		getResourceWithFlag(resource)
+	} else {
+
+		return ErrNoCmd
+	}
+	return nil
 }
