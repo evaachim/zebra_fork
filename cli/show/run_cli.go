@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func showSw(cmd *cobra.Command, args []string) {
+func showSw(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch switches\n")
 
 	swName := args[0]
@@ -21,13 +21,25 @@ func showSw(cmd *cobra.Command, args []string) {
 	manySw[swName] = sw
 
 	printSwitch(manySw)
+
+	return nil
 }
 
-func showNet(cmd *cobra.Command, args []string) {
-	fmt.Printf("\nfetch network\n")
+func showVlan(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch vlan\n")
+
+	netName := args[0]
+	nets := map[string]*network.VLANPool{}
+
+	net := &network.VLANPool{} //nolint:exhaustruct,exhaustivestruct
+	nets[netName] = net
+
+	printNets(nets)
+
+	return nil
 }
 
-func showLab(cmd *cobra.Command, args []string) {
+func showLab(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch labs\n")
 
 	labName := args[0]
@@ -38,9 +50,11 @@ func showLab(cmd *cobra.Command, args []string) {
 	manyLabs[labName] = lab
 
 	printLab(manyLabs)
+
+	return nil
 }
 
-func showDC(cmd *cobra.Command, args []string) {
+func showDC(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch data-centers\n")
 
 	centName := args[0]
@@ -50,9 +64,11 @@ func showDC(cmd *cobra.Command, args []string) {
 	manyCenters[centName] = center
 
 	printDC(manyCenters)
+
+	return nil
 }
 
-func showServ(cmd *cobra.Command, args []string) {
+func showServ(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch servers\n")
 
 	srvName := args[0]
@@ -63,9 +79,11 @@ func showServ(cmd *cobra.Command, args []string) {
 	manySrv[srvName] = srv
 
 	printServer(manySrv)
+
+	return nil
 }
 
-func showESX(xmd *cobra.Command, args []string) {
+func showESX(xmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch ESX servers\n")
 
 	esxName := args[0]
@@ -75,9 +93,11 @@ func showESX(xmd *cobra.Command, args []string) {
 	manyESX[esxName] = esx
 
 	printESX(manyESX)
+
+	return nil
 }
 
-func showVC(xmd *cobra.Command, args []string) {
+func showVC(xmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch V Centers\n")
 
 	vcName := args[0]
@@ -87,9 +107,11 @@ func showVC(xmd *cobra.Command, args []string) {
 	manyVC[vcName] = vc
 
 	printVC(manyVC)
+
+	return nil
 }
 
-func showRack(cmd *cobra.Command, args []string) {
+func showRack(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch racks\n")
 
 	vcName := args[0]
@@ -99,9 +121,11 @@ func showRack(cmd *cobra.Command, args []string) {
 	manyRacks[vcName] = rack
 
 	printRack(manyRacks)
+
+	return nil
 }
 
-func showReg(cmd *cobra.Command, args []string) {
+func showReg(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch registrations\n")
 
 	usrName := args[0]
@@ -111,9 +135,11 @@ func showReg(cmd *cobra.Command, args []string) {
 	manyUsr[usrName] = usr
 
 	printUser(manyUsr)
+
+	return nil
 }
 
-func showUsr(cmd *cobra.Command, args []string) {
+func showUsr(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch users\n")
 
 	usrName := args[0]
@@ -123,11 +149,13 @@ func showUsr(cmd *cobra.Command, args []string) {
 	manyUsr[usrName] = usr
 
 	printUser(manyUsr)
+
+	return nil
 }
 
 func printSwitch(srv map[string]*network.Switch) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"id", "Management IP", "Credentials", "Serial Number", "Model", "Ports", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Management IP", "Credentials", "Serial Number", "Model", "Ports", "Labels"})
 
 	for piece, sw := range srv {
 		data.AppendRow(table.Row{
@@ -149,7 +177,7 @@ func printSwitch(srv map[string]*network.Switch) {
 
 func printLab(labs map[string]*dc.Lab) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"id", "Name", "ID", "Status", "Type", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "Type", "Labels"})
 
 	for piece, lb := range labs {
 		data.AppendRow(table.Row{
@@ -167,7 +195,7 @@ func printLab(labs map[string]*dc.Lab) {
 
 func printDC(dcs map[string]*dc.Datacenter) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Address", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "Type", "Address", "Labels"})
 
 	for piece, dc := range dcs {
 		data.AppendRow(table.Row{
@@ -186,7 +214,7 @@ func printDC(dcs map[string]*dc.Datacenter) {
 
 func printServer(servers map[string]*compute.Server) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "Board IP", "Status", "Type", "Model", "Credentials", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "Board IP", "Type", "Model", "Credentials", "Labels"})
 
 	for piece, s := range servers {
 		data.AppendRow(table.Row{
@@ -208,7 +236,7 @@ func printServer(servers map[string]*compute.Server) {
 
 func printESX(manyEsx map[string]*compute.ESX) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "Server ID", "IP", "Status", "Type", "Credentials", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "Server ID", "IP", "Type", "Credentials", "Labels"})
 
 	for piece, esx := range manyEsx {
 		data.AppendRow(table.Row{
@@ -230,7 +258,7 @@ func printESX(manyEsx map[string]*compute.ESX) {
 
 func printVC(manyVC map[string]*compute.VCenter) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "IP", "Status", "Type", "Credentials", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "IP", "Type", "Credentials", "Labels"})
 
 	for piece, vc := range manyVC {
 		data.AppendRow(table.Row{
@@ -240,7 +268,6 @@ func printVC(manyVC map[string]*compute.VCenter) {
 			fmt.Sprintf(vc.NamedResource.Name),
 			vc.IP.String(),
 			fmt.Sprintf(vc.NamedResource.Type),
-
 			fmt.Sprintf("%s", vc.Credentials.Keys),
 			fmt.Sprintf("%s", vc.NamedResource.Labels),
 		})
@@ -270,7 +297,7 @@ func printRack(racks map[string]*dc.Rack) {
 
 func printUser(users map[string]*auth.User) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Password Hash", "Role", "Priviledges", "Key", "Labels"})
+	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Password Hash", "Role", "Priviledges", "Labels"})
 
 	for piece, user := range users {
 		data.AppendRow(table.Row{
@@ -284,6 +311,25 @@ func printUser(users map[string]*auth.User) {
 
 			fmt.Sprintf("%s", user.Role.Privileges),
 			fmt.Sprintf("%s", user.NamedResource.Labels),
+		})
+	}
+
+	fmt.Println(data.Render())
+}
+
+func printNets(vlans map[string]*network.VLANPool) {
+	data := table.NewWriter()
+	data.AppendHeader(table.Row{"ID", "Status", "Type", "Range Start", "Range End", "Labels"})
+
+	for piece, vlan := range vlans {
+		data.AppendRow(table.Row{
+			piece,
+			fmt.Sprintf(vlan.ID),
+			fmt.Sprintf(vlan.Status.UsedBy),
+			fmt.Sprintf(vlan.Type),
+			fmt.Sprintf("%010d", vlan.RangeStart),
+			fmt.Sprintf("%010d", vlan.RangeEnd),
+			fmt.Sprintf("%s", vlan.Labels),
 		})
 	}
 

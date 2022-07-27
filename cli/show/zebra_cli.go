@@ -31,7 +31,7 @@ func NewZebra() *cobra.Command {
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "users",
 		Short:        "show zebra userss",
-		Run:          showUsr,
+		RunE:         showUsr,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
@@ -39,7 +39,7 @@ func NewZebra() *cobra.Command {
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "regs",
 		Short:        "show zebra registrations",
-		Run:          showReg,
+		RunE:         showReg,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
@@ -50,16 +50,16 @@ func NewZebra() *cobra.Command {
 // for network resources.
 func NewNetCmd() *cobra.Command {
 	netCmd := &cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-		Use:          "networks",
-		Short:        "show zebra networks",
-		Run:          showNet,
+		Use:          "vlan-pools",
+		Short:        "show zebra vlan pools",
+		RunE:         showVlan,
 		SilenceUsage: true,
 	}
 
 	netCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "switches",
 		Short:        "show zebra switches",
-		Run:          showSw,
+		RunE:         showSw,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
@@ -76,14 +76,14 @@ func NewSrvCmd() *cobra.Command {
 	srvCmd := &cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "servers",
 		Short:        "show zebra servers",
-		Run:          showServ,
+		RunE:         showServ,
 		SilenceUsage: true,
 	}
 
 	srvCmd.AddCommand((&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "esx",
 		Short:        "show zebra esx-servers",
-		Run:          showESX,
+		RunE:         showESX,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	}))
@@ -91,7 +91,7 @@ func NewSrvCmd() *cobra.Command {
 	srvCmd.AddCommand((&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "vcenter",
 		Short:        "show zebra vcenter",
-		Run:          showVC,
+		RunE:         showVC,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	}))
@@ -108,14 +108,14 @@ func NewDCCmd() *cobra.Command {
 	dcCmd := &cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "dc",
 		Short:        "show datacenter information",
-		Run:          showDC,
+		RunE:         showDC,
 		SilenceUsage: true,
 	}
 
 	dcCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "labs",
 		Short:        "show zebra labss",
-		Run:          showLab,
+		RunE:         showLab,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
@@ -123,7 +123,7 @@ func NewDCCmd() *cobra.Command {
 	dcCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "racks",
 		Short:        "show zebra racks",
-		Run:          showRack,
+		RunE:         showRack,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
