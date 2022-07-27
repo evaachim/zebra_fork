@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func showSw(cmd *cobra.Command, args []string) error {
+func ShowSw(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch switches\n")
 
 	swName := args[0]
@@ -25,7 +25,7 @@ func showSw(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showVlan(cmd *cobra.Command, args []string) error {
+func ShowVlan(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch vlan\n")
 
 	netName := args[0]
@@ -39,7 +39,7 @@ func showVlan(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showLab(cmd *cobra.Command, args []string) error {
+func ShowLab(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch labs\n")
 
 	labName := args[0]
@@ -54,7 +54,7 @@ func showLab(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showDC(cmd *cobra.Command, args []string) error {
+func ShowDC(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch data-centers\n")
 
 	centName := args[0]
@@ -68,7 +68,7 @@ func showDC(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showServ(cmd *cobra.Command, args []string) error {
+func ShowServ(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch servers\n")
 
 	srvName := args[0]
@@ -83,7 +83,7 @@ func showServ(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showESX(xmd *cobra.Command, args []string) error {
+func ShowESX(xmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch ESX servers\n")
 
 	esxName := args[0]
@@ -97,7 +97,7 @@ func showESX(xmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showVC(xmd *cobra.Command, args []string) error {
+func ShowVC(xmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch V Centers\n")
 
 	vcName := args[0]
@@ -111,7 +111,7 @@ func showVC(xmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showRack(cmd *cobra.Command, args []string) error {
+func ShowRack(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch racks\n")
 
 	vcName := args[0]
@@ -125,7 +125,7 @@ func showRack(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showReg(cmd *cobra.Command, args []string) error {
+func ShowReg(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch registrations\n")
 
 	usrName := args[0]
@@ -139,7 +139,7 @@ func showReg(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func showUsr(cmd *cobra.Command, args []string) error {
+func ShowUsr(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch users\n")
 
 	usrName := args[0]
