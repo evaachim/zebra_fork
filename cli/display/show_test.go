@@ -1,32 +1,27 @@
-package show_test
+package display_test
 
 import (
 	"testing"
 
-	"github.com/project-safari/zebra/cli/show"
-	"github.com/spf13/cobra"
+	"github.com/project-safari/zebra/cli/display"
 	"github.com/stretchr/testify/assert"
 )
 
-var testCmd = &cobra.Command{ //nolint:exhaustruct,exhaustivestruct
+var testCmd = display.NewZebra() //gochecknoglobals
+
+/*
+&cobra.Command{ //nolint:exhaustruct,exhaustivestruct,gochecknoglobals
 	Use:     "show resources",
 	Short:   "command to show zebra resources",
 	Version: "test-version",
 }
+*/
 
 func TestNewZebraCommand(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	cmd := show.NewZebra()
-	assert.NotNil(cmd)
-}
-
-func TestNew(t *testing.T) {
-	t.Parallel()
-	assert := assert.New(t)
-
-	cmd := show.New()
+	cmd := display.NewZebra()
 	assert.NotNil(cmd)
 }
 
@@ -34,7 +29,7 @@ func TestNewNetCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	netC := show.NewNetCmd()
+	netC := display.NewNetCmd()
 	assert.NotNil(netC)
 }
 
@@ -42,7 +37,7 @@ func TestNewSrvCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	srvC := show.NewSrvCmd()
+	srvC := display.NewSrvCmd()
 	assert.NotNil(srvC)
 }
 
@@ -50,7 +45,7 @@ func TestNewDcCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	dcC := show.NewDCCmd()
+	dcC := display.NewDCCmd()
 	assert.NotNil(dcC)
 }
 
@@ -60,7 +55,7 @@ func TestShowSw(t *testing.T) {
 
 	args := []string{"switch", "test-case"}
 
-	sw := show.ShowSw(testCmd, args)
+	sw := display.ShowSw(testCmd, args)
 
 	assert.Nil(sw)
 }
@@ -71,7 +66,7 @@ func TestShowServer(t *testing.T) {
 
 	args := []string{"server", "test-case"}
 
-	serv := show.ShowServ(testCmd, args)
+	serv := display.ShowServ(testCmd, args)
 
 	assert.Nil(serv)
 }
@@ -82,7 +77,7 @@ func TestShowVC(t *testing.T) {
 
 	args := []string{"vcenters", "test-case"}
 
-	vc := show.ShowVC(testCmd, args)
+	vc := display.ShowVC(testCmd, args)
 
 	assert.Nil(vc)
 }
@@ -93,7 +88,7 @@ func TestShowVlan(t *testing.T) {
 
 	args := []string{"vlan", "test-case"}
 
-	vlan := show.ShowVlan(testCmd, args)
+	vlan := display.ShowVlan(testCmd, args)
 
 	assert.Nil(vlan)
 }
@@ -104,7 +99,7 @@ func TestShowRack(t *testing.T) {
 
 	args := []string{"rack", "test-case"}
 
-	rack := show.ShowRack(testCmd, args)
+	rack := display.ShowRack(testCmd, args)
 
 	assert.Nil(rack)
 }
@@ -115,7 +110,7 @@ func TestShowLab(t *testing.T) {
 
 	args := []string{"lab", "test-case"}
 
-	lab := show.ShowLab(testCmd, args)
+	lab := display.ShowLab(testCmd, args)
 
 	assert.Nil(lab)
 }
@@ -126,7 +121,7 @@ func TestShowESX(t *testing.T) {
 
 	args := []string{"esv", "test-case"}
 
-	esv := show.ShowESX(testCmd, args)
+	esv := display.ShowESX(testCmd, args)
 
 	assert.Nil(esv)
 }
@@ -137,7 +132,20 @@ func TestShowDC(t *testing.T) {
 
 	args := []string{"datacenter", "test-case"}
 
-	dc := show.ShowDC(testCmd, args)
+	dc := display.ShowDC(testCmd, args)
 
 	assert.Nil(dc)
 }
+
+/*
+func TestShowUser(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	args := []string{"user", "test-case"}
+
+	user := display.ShowUsr(testCmd, args)
+
+	assert.Nil(user)
+}
+*/

@@ -1,4 +1,4 @@
-package show
+package display
 
 import (
 	"fmt"
@@ -11,11 +11,140 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// user info.
+func ShowUsr(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch users\n")
+
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
+	// usrName := args[0]
+
+	manyUsr := map[string]*auth.User{}
+
+	if len(args) == 0 {
+		if _, e := client.Get("users", nil, manyUsr); e != nil {
+			return e
+		}
+	} else {
+		path := fmt.Sprintf("users/%s", args[0])
+
+		usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
+
+		if _, e := client.Get(path, usr); e != nil {
+			return e
+		}
+
+		manyUsr[usr.Name] = usr
+	}
+
+	printUser(manyUsr)
+
+	return nil
+}
+
+func ShowReg(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch registrations\n")
+
+	/*
+		usrName := args[0]
+		manyUsr := map[string]*auth.User{}
+
+		usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
+		manyUsr[usrName] = usr
+
+		printUser(manyUsr)
+
+		return nil*/
+
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
+	// usrName := args[0]
+
+	manyUsr := map[string]*auth.User{}
+
+	if len(args) == 0 {
+		if _, e := client.Get("registrations", nil, manyUsr); e != nil {
+			return e
+		}
+	} else {
+		path := fmt.Sprintf("registrations/%s", args[0])
+
+		usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
+
+		if _, e := client.Get(path, usr); e != nil {
+			return e
+		}
+
+		manyUsr[usr.Name] = usr
+	}
+
+	printUser(manyUsr)
+
+	return nil
+}
+
+// network resources.
+func ShowVlan(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch vlan\n")
+
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
+	vlans := map[string]*network.VLANPool{}
+
+	if len(args) == 0 {
+		if _, e := config.Get("registrations", nil, vlans); e != nil {
+			return e
+		}
+	} else {
+		netName := args[0]
+
+		vlan := &network.VLANPool{} //nolint:exhaustruct,exhaustivestruct
+		vlans[netName] = vlan
+	}
+
+	printNets(vlans)
+
+	return nil
+}
+
 func ShowSw(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch switches\n")
 
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
 	swName := args[0]
 	sw := &network.Switch{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, sw); e != nil {
+		return e
+	}
+
 	manySw := map[string]*network.Switch{}
 
 	manySw[swName] = sw
@@ -25,16 +154,53 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ShowVlan(cmd *cobra.Command, args []string) error {
+func ShowIP(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch vlan\n")
 
-	netName := args[0]
-	nets := map[string]*network.VLANPool{}
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
-	net := &network.VLANPool{} //nolint:exhaustruct,exhaustivestruct
-	nets[netName] = net
+	IPName := args[0]
+	addr := &network.IPAddressPool{} //nolint:exhaustruct,exhaustivestruct
 
-	printNets(nets)
+	if _, e := config.Get("", nil, addr); e != nil {
+		return e
+	}
+
+	pools := map[string]*network.IPAddressPool{}
+
+	pools[IPName] = addr
+
+	printIP(pools)
+
+	return nil
+}
+
+// datacenter.
+func ShowDC(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch data-centers\n")
+
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
+	centName := args[0]
+	center := &dc.Datacenter{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, center); e != nil {
+		return e
+	}
+
+	manyCenters := map[string]*dc.Datacenter{}
+
+	manyCenters[centName] = center
+
+	printDC(manyCenters)
 
 	return nil
 }
@@ -42,10 +208,21 @@ func ShowVlan(cmd *cobra.Command, args []string) error {
 func ShowLab(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch labs\n")
 
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
+
 	labName := args[0]
-	manyLabs := map[string]*dc.Lab{}
 
 	lab := &dc.Lab{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, lab); e != nil {
+		return e
+	}
+
+	manyLabs := map[string]*dc.Lab{}
 
 	manyLabs[labName] = lab
 
@@ -54,27 +231,49 @@ func ShowLab(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ShowDC(cmd *cobra.Command, args []string) error {
-	fmt.Printf("\nfetch data-centers\n")
+func ShowRack(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch racks\n")
 
-	centName := args[0]
-	manyCenters := map[string]*dc.Datacenter{}
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
-	center := &dc.Datacenter{} //nolint:exhaustruct,exhaustivestruct
-	manyCenters[centName] = center
+	vcName := args[0]
+	rack := &dc.Rack{} //nolint:exhaustruct,exhaustivestruct
 
-	printDC(manyCenters)
+	if _, e := config.Get("", nil, rack); e != nil {
+		return e
+	}
+
+	manyRacks := map[string]*dc.Rack{}
+
+	manyRacks[vcName] = rack
+
+	printRack(manyRacks)
 
 	return nil
 }
 
+// server.
 func ShowServ(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch servers\n")
 
-	srvName := args[0]
-	manySrv := map[string]*compute.Server{}
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
+	srvName := args[0]
 	srv := &compute.Server{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, srv); e != nil {
+		return e
+	}
+
+	manySrv := map[string]*compute.Server{}
 
 	manySrv[srvName] = srv
 
@@ -83,13 +282,23 @@ func ShowServ(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ShowESX(xmd *cobra.Command, args []string) error {
+func ShowESX(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch ESX servers\n")
 
-	esxName := args[0]
-	manyESX := map[string]*compute.ESX{}
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
+	esxName := args[0]
 	esx := &compute.ESX{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, esx); e != nil {
+		return e
+	}
+
+	manyESX := map[string]*compute.ESX{}
 	manyESX[esxName] = esx
 
 	printESX(manyESX)
@@ -97,13 +306,23 @@ func ShowESX(xmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ShowVC(xmd *cobra.Command, args []string) error {
+func ShowVC(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch V Centers\n")
 
-	vcName := args[0]
-	manyVC := map[string]*compute.VCenter{}
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
+	vcName := args[0]
 	vc := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
+
+	if _, e := config.Get("", nil, vc); e != nil {
+		return e
+	}
+
+	manyVC := map[string]*compute.VCenter{}
 	manyVC[vcName] = vc
 
 	printVC(manyVC)
@@ -111,44 +330,27 @@ func ShowVC(xmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ShowRack(cmd *cobra.Command, args []string) error {
-	fmt.Printf("\nfetch racks\n")
+func ShowVM(cmd *cobra.Command, args []string) error {
+	fmt.Printf("\nfetch V Centers\n")
+
+	configFile := cmd.Flag("config").Value.String()
+	config, e := Load(configFile)
+	if e != nil {
+		return e
+	}
 
 	vcName := args[0]
-	manyRacks := map[string]*dc.Rack{}
+	vm := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
 
-	rack := &dc.Rack{} //nolint:exhaustruct,exhaustivestruct
-	manyRacks[vcName] = rack
+	if _, e := config.Get("", nil, vm); e != nil {
+		return e
+	}
 
-	printRack(manyRacks)
+	manyVM := map[string]*compute.VCenter{}
 
-	return nil
-}
+	manyVM[vcName] = vm
 
-func ShowReg(cmd *cobra.Command, args []string) error {
-	fmt.Printf("\nfetch registrations\n")
-
-	usrName := args[0]
-	manyUsr := map[string]*auth.User{}
-
-	usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
-	manyUsr[usrName] = usr
-
-	printUser(manyUsr)
-
-	return nil
-}
-
-func ShowUsr(cmd *cobra.Command, args []string) error {
-	fmt.Printf("\nfetch users\n")
-
-	usrName := args[0]
-	manyUsr := map[string]*auth.User{}
-
-	usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
-	manyUsr[usrName] = usr
-
-	printUser(manyUsr)
+	printVC(manyVM)
 
 	return nil
 }
@@ -295,7 +497,7 @@ func printRack(racks map[string]*dc.Rack) {
 	fmt.Println(data.Render())
 }
 
-func printUser(users map[string]*auth.User) {
+func printUser(users map[string]*auth.User) error {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Password Hash", "Role", "Priviledges", "Labels"})
 
@@ -315,6 +517,7 @@ func printUser(users map[string]*auth.User) {
 	}
 
 	fmt.Println(data.Render())
+	return nil
 }
 
 func printNets(vlans map[string]*network.VLANPool) {
@@ -330,6 +533,24 @@ func printNets(vlans map[string]*network.VLANPool) {
 			fmt.Sprintf("%010d", vlan.RangeStart),
 			fmt.Sprintf("%010d", vlan.RangeEnd),
 			fmt.Sprintf("%s", vlan.Labels),
+		})
+	}
+
+	fmt.Println(data.Render())
+}
+
+func printIP(vlans map[string]*network.IPAddressPool) {
+	data := table.NewWriter()
+	data.AppendHeader(table.Row{"ID", "Status", "Type", "Subnets", "Labels"})
+
+	for piece, pool := range vlans {
+		data.AppendRow(table.Row{
+			piece,
+			fmt.Sprintf(pool.ID),
+			fmt.Sprintf(pool.Status.UsedBy),
+			fmt.Sprintf(pool.Type),
+			fmt.Sprintf("%s", pool.Subnets),
+			fmt.Sprintf("%s", pool.Labels),
 		})
 	}
 
