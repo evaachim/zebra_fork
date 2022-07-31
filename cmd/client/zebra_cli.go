@@ -1,4 +1,4 @@
-package display
+package main
 
 import (
 	"github.com/spf13/cobra"
@@ -29,7 +29,7 @@ func NewZebra() *cobra.Command {
 
 	usrCmd := &cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "users",
-		Short:        "show zebra userss",
+		Short:        "show zebra users",
 		RunE:         ShowUsr,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
@@ -48,12 +48,10 @@ func NewZebra() *cobra.Command {
 }
 
 // function to add show commands for network resources to zebraCmd.
-func NewNetCmd() *cobra.Command {
-	zebraCmd := NewZebra()
-
+func NewNetCmd(zebraCmd *cobra.Command) *cobra.Command {
 	zebraCmd.AddCommand(
 		&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-			Use:          "vlan",
+			Use:          "vlans",
 			Short:        "show zebra switches",
 			RunE:         ShowVlan,
 			Args:         cobra.MaximumNArgs(1),
@@ -80,9 +78,7 @@ func NewNetCmd() *cobra.Command {
 }
 
 // function to add show commands for dc resources to zebraCmd.
-func NewDCCmd() *cobra.Command {
-	zebraCmd := NewZebra()
-
+func NewDCCmd(zebraCmd *cobra.Command) *cobra.Command {
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "dc",
 		Short:        "show datacenters",
@@ -106,15 +102,11 @@ func NewDCCmd() *cobra.Command {
 		SilenceUsage: true,
 	})
 
-	zebraCmd.AddCommand(zebraCmd)
-
 	return zebraCmd
 }
 
 // function to add show commands for server resources to zebraCmd.
-func NewSrvCmd() *cobra.Command {
-	zebraCmd := NewZebra()
-
+func NewSrvCmd(zebraCmd *cobra.Command) *cobra.Command {
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "servers",
 		Short:        "show servers",
@@ -145,8 +137,6 @@ func NewSrvCmd() *cobra.Command {
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	}))
-
-	zebraCmd.AddCommand(zebraCmd)
 
 	return zebraCmd
 }

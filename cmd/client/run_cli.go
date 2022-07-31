@@ -1,4 +1,4 @@
-package display
+package main
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ func ShowUsr(cmd *cobra.Command, args []string) error {
 
 		usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
 
-		if _, e := client.Get(path, usr); e != nil {
+		if _, e := client.Get(path, nil, usr); e != nil {
 			return e
 		}
 
@@ -76,8 +76,6 @@ func ShowReg(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	// usrName := args[0]
-
 	manyUsr := map[string]*auth.User{}
 
 	if len(args) == 0 {
@@ -89,7 +87,7 @@ func ShowReg(cmd *cobra.Command, args []string) error {
 
 		usr := &auth.User{} //nolint:exhaustruct,exhaustivestruct
 
-		if _, e := client.Get(path, usr); e != nil {
+		if _, e := client.Get(path, nil, usr); e != nil {
 			return e
 		}
 
@@ -111,10 +109,15 @@ func ShowVlan(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	vlans := map[string]*network.VLANPool{}
 
 	if len(args) == 0 {
-		if _, e := config.Get("registrations", nil, vlans); e != nil {
+		if _, e := client.Get("vlans", nil, vlans); e != nil {
 			return e
 		}
 	} else {
@@ -138,10 +141,15 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	swName := args[0]
 	sw := &network.Switch{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, sw); e != nil {
+	if _, e := client.Get("switches", nil, sw); e != nil {
 		return e
 	}
 
@@ -163,10 +171,15 @@ func ShowIP(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	IPName := args[0]
 	addr := &network.IPAddressPool{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, addr); e != nil {
+	if _, e := client.Get("", nil, addr); e != nil {
 		return e
 	}
 
@@ -189,10 +202,15 @@ func ShowDC(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	centName := args[0]
 	center := &dc.Datacenter{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, center); e != nil {
+	if _, e := client.Get("", nil, center); e != nil {
 		return e
 	}
 
@@ -214,11 +232,16 @@ func ShowLab(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	labName := args[0]
 
 	lab := &dc.Lab{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, lab); e != nil {
+	if _, e := client.Get("", nil, lab); e != nil {
 		return e
 	}
 
@@ -240,10 +263,15 @@ func ShowRack(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	vcName := args[0]
 	rack := &dc.Rack{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, rack); e != nil {
+	if _, e := client.Get("", nil, rack); e != nil {
 		return e
 	}
 
@@ -266,10 +294,16 @@ func ShowServ(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
+	fmt.Println(configFile)
 	srvName := args[0]
 	srv := &compute.Server{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, srv); e != nil {
+	if _, e := client.Get("", nil, srv); e != nil {
 		return e
 	}
 
@@ -291,10 +325,15 @@ func ShowESX(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	esxName := args[0]
 	esx := &compute.ESX{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, esx); e != nil {
+	if _, e := client.Get("", nil, esx); e != nil {
 		return e
 	}
 
@@ -315,10 +354,15 @@ func ShowVC(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	vcName := args[0]
 	vc := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, vc); e != nil {
+	if _, e := client.Get("", nil, vc); e != nil {
 		return e
 	}
 
@@ -339,10 +383,15 @@ func ShowVM(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
+	client, e := NewClient(config)
+	if e != nil {
+		return e
+	}
+
 	vcName := args[0]
 	vm := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := config.Get("", nil, vm); e != nil {
+	if _, e := client.Get("", nil, vm); e != nil {
 		return e
 	}
 
