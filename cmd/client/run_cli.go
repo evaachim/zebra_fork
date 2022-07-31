@@ -155,7 +155,7 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 	swName := args[0]
 	sw := &network.Switch{} //nolint:exhaustruct,exhaustivestruct
 
-	if _, e := client.Get("switches", nil, sw); e != nil {
+	if _, e := client.Get("", nil, sw); e != nil {
 		return e
 	}
 
@@ -408,17 +408,17 @@ func ShowVM(cmd *cobra.Command, args []string) error {
 	}
 
 	vcName := args[0]
-	vm := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
+	vm := &compute.VM{} //nolint:exhaustruct,exhaustivestruct
 
 	if _, e := client.Get("", nil, vm); e != nil {
 		return e
 	}
 
-	manyVM := map[string]*compute.VCenter{}
+	manyVM := map[string]*compute.VM{}
 
 	manyVM[vcName] = vm
 
-	printVC(manyVM)
+	printVM(manyVM)
 
 	return nil
 }
@@ -540,6 +540,28 @@ func printVC(manyVC map[string]*compute.VCenter) {
 			fmt.Sprintf(vc.NamedResource.Type),
 			fmt.Sprintf("%s", vc.Credentials.Keys),
 			fmt.Sprintf("%s", vc.NamedResource.Labels),
+		})
+	}
+
+	fmt.Println(data.Render())
+}
+
+func printVM(manyVM map[string]*compute.VM) {
+	data := table.NewWriter()
+	data.AppendHeader(table.Row{"ID", "Name", "IP", "Type", "Credentials", "ESXID", "VCenter ID", "Management IP", "Labels"})
+
+	for piece, vm := range manyVM {
+		data.AppendRow(table.Row{
+			piece,
+			fmt.Sprintf(vm.NamedResource.ID),
+
+			fmt.Sprintf(vm.NamedResource.Name),
+			fmt.Sprintf(vm.NamedResource.Type),
+			fmt.Sprintf("%s", vm.Credentials.Keys),
+			fmt.Sprintf(vm.ESXID),
+			fmt.Sprintf(vm.VCenterID),
+			vm.ManagementIP.String(),
+			fmt.Sprintf("%s", vm.NamedResource.Labels),
 		})
 	}
 

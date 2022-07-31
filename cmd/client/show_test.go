@@ -3,10 +3,15 @@ package main //nolint:testpackage
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
-var testCmd = NewZebra() //nolint:gochecknoglobals
+func test() *cobra.Command {
+	var testCmd = NewZebra()
+
+	return testCmd
+}
 
 func TestNewZebraCommand(t *testing.T) {
 	t.Parallel()
@@ -20,7 +25,7 @@ func TestNewNetCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	netC := NewNetCmd(testCmd)
+	netC := NewNetCmd(test())
 	assert.NotNil(netC)
 }
 
@@ -28,7 +33,7 @@ func TestNewSrvCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	srvC := NewSrvCmd(testCmd)
+	srvC := NewSrvCmd(test())
 	assert.NotNil(srvC)
 }
 
@@ -36,7 +41,7 @@ func TestNewDcCmd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	dcC := NewDCCmd(testCmd)
+	dcC := NewDCCmd(test())
 	assert.NotNil(dcC)
 }
 
@@ -46,7 +51,7 @@ func TestShowServer(t *testing.T) {
 
 	args := []string{"servers", "test-case"}
 
-	srvCmd := NewSrvCmd(testCmd)
+	srvCmd := NewSrvCmd(test())
 	rootCmd := New()
 	rootCmd.AddCommand(srvCmd)
 	serv := ShowServ(rootCmd, args)
@@ -60,7 +65,7 @@ func TestShowVC(t *testing.T) {
 
 	args := []string{"vcenters", "test-case"}
 
-	vc := NewSrvCmd(testCmd)
+	vc := NewSrvCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(vc)
@@ -73,9 +78,9 @@ func TestShowVlan(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"vlan", "test-case"}
+	args := []string{"vlans", "test-case"}
 
-	v := NewNetCmd(testCmd)
+	v := NewNetCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(v)
@@ -85,13 +90,15 @@ func TestShowVlan(t *testing.T) {
 	assert.NotNil(vlan)
 }
 
+//
+
 func TestShowSw(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"switches", "test-case"}
+	args := []string{"switch", "test-case"}
 
-	netCmd := NewNetCmd(testCmd)
+	netCmd := NewNetCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(netCmd)
@@ -104,9 +111,9 @@ func TestShowRack(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"rack", "test-case"}
+	args := []string{"racks", "test-case"}
 
-	rackCmd := NewDCCmd(testCmd)
+	rackCmd := NewDCCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(rackCmd)
@@ -119,9 +126,9 @@ func TestShowLab(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"lab", "test-case"}
+	args := []string{"labs", "test-case"}
 
-	labCmd := NewDCCmd(testCmd)
+	labCmd := NewDCCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(labCmd)
@@ -131,13 +138,15 @@ func TestShowLab(t *testing.T) {
 	assert.NotNil(lab)
 }
 
+//
+
 func TestShowESX(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"esv", "test-case"}
+	args := []string{"esx", "test-case"}
 
-	esxCmd := NewDCCmd(testCmd)
+	esxCmd := NewSrvCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(esxCmd)
@@ -151,9 +160,9 @@ func TestShowDC(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"datacenter", "test-case"}
+	args := []string{"dc", "test-case"}
 
-	dcCmd := NewDCCmd(testCmd)
+	dcCmd := NewDCCmd(test())
 	rootCmd := New()
 
 	rootCmd.AddCommand(dcCmd)
@@ -167,12 +176,56 @@ func TestShowUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"user", "test-case"}
+	args := []string{"users", "test-case"}
 
 	rootCmd := New()
-	rootCmd.AddCommand(testCmd)
+	rootCmd.AddCommand(test())
 
 	user := ShowUsr(rootCmd, args)
 
 	assert.NotNil(user)
+}
+
+func TestShowReg(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	args := []string{"registrations", "test-case"}
+
+	rootCmd := New()
+	rootCmd.AddCommand(test())
+
+	reg := ShowReg(rootCmd, args)
+
+	assert.NotNil(reg)
+}
+
+func TestShowIP(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	args := []string{"ip", "test-case"}
+
+	rootCmd := New()
+	rootCmd.AddCommand(test())
+
+	addr := ShowIP(rootCmd, args)
+
+	assert.NotNil(addr)
+}
+
+//
+
+func TestShowVM(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	args := []string{"vms", "test-case"}
+
+	rootCmd := New()
+	rootCmd.AddCommand(test())
+
+	machine := ShowVM(rootCmd, args)
+
+	assert.NotNil(machine)
 }

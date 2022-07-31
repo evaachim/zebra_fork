@@ -36,7 +36,7 @@ func NewZebra() *cobra.Command {
 	}
 
 	usrCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-		Use:          "regs",
+		Use:          "registrations",
 		Short:        "show zebra registrations",
 		RunE:         ShowReg,
 		SilenceUsage: true,
@@ -59,7 +59,7 @@ func NewNetCmd(zebraCmd *cobra.Command) *cobra.Command {
 		})
 
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-		Use:          "switches",
+		Use:          "sws",
 		Short:        "show zebra switches",
 		RunE:         ShowSw,
 		Args:         cobra.MaximumNArgs(1),
@@ -67,7 +67,7 @@ func NewNetCmd(zebraCmd *cobra.Command) *cobra.Command {
 	})
 
 	zebraCmd.AddCommand(&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-		Use:          "IP-Pools",
+		Use:          "ip",
 		Short:        "show zebra IP-Address-Pools",
 		RunE:         ShowIP,
 		Args:         cobra.MaximumNArgs(1),
@@ -131,7 +131,7 @@ func NewSrvCmd(zebraCmd *cobra.Command) *cobra.Command {
 	}))
 
 	zebraCmd.AddCommand((&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
-		Use:          "vm",
+		Use:          "vms",
 		Short:        "show vms",
 		RunE:         ShowVM,
 		Args:         cobra.MaximumNArgs(1),
