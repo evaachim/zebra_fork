@@ -133,7 +133,7 @@ func NewSrvCmd(zebraCmd *cobra.Command) *cobra.Command {
 	zebraCmd.AddCommand((&cobra.Command{ //nolint:exhaustruct,exhaustivestruct
 		Use:          "vm",
 		Short:        "show vms",
-		RunE:         ShowVC,
+		RunE:         ShowVM,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	}))

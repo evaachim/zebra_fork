@@ -17,11 +17,13 @@ func ShowUsr(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
 
 	client, e := NewClient(config)
+
 	if e != nil {
 		return e
 	}
@@ -67,6 +69,7 @@ func ShowReg(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -105,6 +108,7 @@ func ShowVlan(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -137,11 +141,13 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
 
 	client, e := NewClient(config)
+
 	if e != nil {
 		return e
 	}
@@ -167,6 +173,7 @@ func ShowIP(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -198,6 +205,7 @@ func ShowDC(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -228,6 +236,7 @@ func ShowLab(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -259,6 +268,7 @@ func ShowRack(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -290,17 +300,21 @@ func ShowServ(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
 
 	client, e := NewClient(config)
+
 	if e != nil {
 		return e
 	}
 
 	fmt.Println(configFile)
+
 	srvName := args[0]
+
 	srv := &compute.Server{} //nolint:exhaustruct,exhaustivestruct
 
 	if _, e := client.Get("", nil, srv); e != nil {
@@ -321,6 +335,7 @@ func ShowESX(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
@@ -350,11 +365,13 @@ func ShowVC(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
 
 	client, e := NewClient(config)
+
 	if e != nil {
 		return e
 	}
@@ -379,11 +396,13 @@ func ShowVM(cmd *cobra.Command, args []string) error {
 
 	configFile := cmd.Flag("config").Value.String()
 	config, e := Load(configFile)
+
 	if e != nil {
 		return e
 	}
 
 	client, e := NewClient(config)
+
 	if e != nil {
 		return e
 	}
@@ -546,7 +565,7 @@ func printRack(racks map[string]*dc.Rack) {
 	fmt.Println(data.Render())
 }
 
-func printUser(users map[string]*auth.User) error {
+func printUser(users map[string]*auth.User) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Password Hash", "Role", "Priviledges", "Labels"})
 
@@ -566,7 +585,6 @@ func printUser(users map[string]*auth.User) error {
 	}
 
 	fmt.Println(data.Render())
-	return nil
 }
 
 func printNets(vlans map[string]*network.VLANPool) {

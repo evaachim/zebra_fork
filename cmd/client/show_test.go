@@ -1,4 +1,4 @@
-package main
+package main //nolint:testpackage
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testCmd = NewZebra() //gochecknoglobals
+var testCmd = NewZebra() //nolint:gochecknoglobals
 
 func TestNewZebraCommand(t *testing.T) {
 	t.Parallel()
