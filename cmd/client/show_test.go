@@ -29,27 +29,6 @@ func TestClient(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	/*configFile := New().Flag("config").Value.String()
-
-	config, e := Load(configFile)
-	assert.Nil(e)
-
-	key, err := auth.Load(testUserKeyFile)
-
-	assert.Nil(err)
-
-	assert.NotNil(key)
-
-	config.Email = "test@yahoo.com"
-
-	config.Key = key
-
-	config.User = "tester"
-
-	config.Defaults.Duration = 3
-
-	config.CACert = testCACertFile*/
-
 	c, err := NewClient(nil)
 	assert.Nil(c)
 	assert.Equal(ErrNoConfig, err)
