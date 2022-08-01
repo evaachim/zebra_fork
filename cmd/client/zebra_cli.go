@@ -39,6 +39,7 @@ func NewZebra() *cobra.Command {
 		Use:          "registrations",
 		Short:        "show zebra registrations",
 		RunE:         ShowReg,
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 	})
 

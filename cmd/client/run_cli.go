@@ -48,7 +48,11 @@ func ShowUsr(cmd *cobra.Command, args []string) error {
 		manyUsr[usr.Name] = usr
 	}
 
-	printUser(manyUsr)
+	// printUser(manyUsr)
+
+	data := printUser(manyUsr)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -97,7 +101,11 @@ func ShowReg(cmd *cobra.Command, args []string) error {
 		manyUsr[usr.Name] = usr
 	}
 
-	printUser(manyUsr)
+	// printUser(manyUsr)
+
+	data := printUser(manyUsr)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -131,7 +139,11 @@ func ShowVlan(cmd *cobra.Command, args []string) error {
 		vlans[netName] = vlan
 	}
 
-	printNets(vlans)
+	// printNets(vlans)
+
+	data := printNets(vlans)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -163,7 +175,10 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 
 	manySw[swName] = sw
 
-	printSwitch(manySw)
+	// printSwitch(manySw)
+	data := printSwitch(manySw)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -194,7 +209,11 @@ func ShowIP(cmd *cobra.Command, args []string) error {
 
 	pools[IPName] = addr
 
-	printIP(pools)
+	// printIP(pools)
+
+	data := printIP(pools)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -226,7 +245,11 @@ func ShowDC(cmd *cobra.Command, args []string) error {
 
 	manyCenters[centName] = center
 
-	printDC(manyCenters)
+	// printDC(manyCenters)
+
+	data := printDC(manyCenters)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -258,7 +281,11 @@ func ShowLab(cmd *cobra.Command, args []string) error {
 
 	manyLabs[labName] = lab
 
-	printLab(manyLabs)
+	// printLab(manyLabs)
+
+	data := printLab(manyLabs)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -289,7 +316,11 @@ func ShowRack(cmd *cobra.Command, args []string) error {
 
 	manyRacks[vcName] = rack
 
-	printRack(manyRacks)
+	// printRack(manyRacks)
+
+	data := printRack(manyRacks)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -325,7 +356,11 @@ func ShowServ(cmd *cobra.Command, args []string) error {
 
 	manySrv[srvName] = srv
 
-	printServer(manySrv)
+	// printServer(manySrv)
+
+	data := printServer(manySrv)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -355,7 +390,11 @@ func ShowESX(cmd *cobra.Command, args []string) error {
 	manyESX := map[string]*compute.ESX{}
 	manyESX[esxName] = esx
 
-	printESX(manyESX)
+	// printESX(manyESX)
+
+	data := printESX(manyESX)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -386,7 +425,11 @@ func ShowVC(cmd *cobra.Command, args []string) error {
 	manyVC := map[string]*compute.VCenter{}
 	manyVC[vcName] = vc
 
-	printVC(manyVC)
+	// printVC(manyVC)
+
+	data := printVC(manyVC)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
@@ -418,12 +461,16 @@ func ShowVM(cmd *cobra.Command, args []string) error {
 
 	manyVM[vcName] = vm
 
-	printVM(manyVM)
+	// printVM(manyVM)
+
+	data := printVM(manyVM)
+
+	fmt.Println(data.Render())
 
 	return nil
 }
 
-func printSwitch(srv map[string]*network.Switch) {
+func printSwitch(srv map[string]*network.Switch) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Management IP", "Credentials", "Serial Number", "Model", "Ports", "Labels"})
 
@@ -442,10 +489,12 @@ func printSwitch(srv map[string]*network.Switch) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	//	fmt.Println(data.Render())
+
+	return data
 }
 
-func printLab(labs map[string]*dc.Lab) {
+func printLab(labs map[string]*dc.Lab) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Type", "Labels"})
 
@@ -460,10 +509,12 @@ func printLab(labs map[string]*dc.Lab) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printDC(dcs map[string]*dc.Datacenter) {
+func printDC(dcs map[string]*dc.Datacenter) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Type", "Address", "Labels"})
 
@@ -479,10 +530,11 @@ func printDC(dcs map[string]*dc.Datacenter) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+	return data
 }
 
-func printServer(servers map[string]*compute.Server) {
+func printServer(servers map[string]*compute.Server) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Board IP", "Type", "Model", "Credentials", "Labels"})
 
@@ -501,10 +553,12 @@ func printServer(servers map[string]*compute.Server) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printESX(manyEsx map[string]*compute.ESX) {
+func printESX(manyEsx map[string]*compute.ESX) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Server ID", "IP", "Type", "Credentials", "Labels"})
 
@@ -523,10 +577,12 @@ func printESX(manyEsx map[string]*compute.ESX) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printVC(manyVC map[string]*compute.VCenter) {
+func printVC(manyVC map[string]*compute.VCenter) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "IP", "Type", "Credentials", "Labels"})
 
@@ -543,10 +599,12 @@ func printVC(manyVC map[string]*compute.VCenter) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printVM(manyVM map[string]*compute.VM) {
+func printVM(manyVM map[string]*compute.VM) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{
 		"ID", "Name", "IP", "Type", "Credentials",
@@ -568,10 +626,12 @@ func printVM(manyVM map[string]*compute.VM) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printRack(racks map[string]*dc.Rack) {
+func printRack(racks map[string]*dc.Rack) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Row", "Labels"})
 
@@ -587,10 +647,12 @@ func printRack(racks map[string]*dc.Rack) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printUser(users map[string]*auth.User) {
+func printUser(users map[string]*auth.User) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Name", "Status", "Type", "Password Hash", "Role", "Priviledges", "Labels"})
 
@@ -609,10 +671,12 @@ func printUser(users map[string]*auth.User) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printNets(vlans map[string]*network.VLANPool) {
+func printNets(vlans map[string]*network.VLANPool) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Status", "Type", "Range Start", "Range End", "Labels"})
 
@@ -628,10 +692,12 @@ func printNets(vlans map[string]*network.VLANPool) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }
 
-func printIP(vlans map[string]*network.IPAddressPool) {
+func printIP(vlans map[string]*network.IPAddressPool) table.Writer {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"ID", "Status", "Type", "Subnets", "Labels"})
 
@@ -646,5 +712,7 @@ func printIP(vlans map[string]*network.IPAddressPool) {
 		})
 	}
 
-	fmt.Println(data.Render())
+	// fmt.Println(data.Render())
+
+	return data
 }

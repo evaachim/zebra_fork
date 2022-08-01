@@ -3,9 +3,21 @@ package main //nolint:testpackage
 import (
 	"testing"
 
+	"github.com/project-safari/zebra/auth"
+	"github.com/project-safari/zebra/cmd/herd/pkg"
+	"github.com/project-safari/zebra/compute"
+	"github.com/project-safari/zebra/dc"
+	"github.com/project-safari/zebra/network"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
+
+func dcData() (map[string]*dc.Datacenter, *dc.Datacenter) {
+	this := make(map[string]*dc.Datacenter)
+	valDC := &dc.Datacenter{} //nolint:exhaustruct,exhaustivestruct
+
+	return this, valDC
+}
 
 func test() *cobra.Command {
 	testCmd := NewZebra()
@@ -57,6 +69,17 @@ func TestShowServer(t *testing.T) {
 	serv := ShowServ(rootCmd, args)
 
 	assert.NotNil(serv)
+
+	toPrint := make(map[string]*compute.Server)
+
+	name := args[0]
+	val := &compute.Server{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printServer(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowVC(t *testing.T) {
@@ -72,6 +95,17 @@ func TestShowVC(t *testing.T) {
 
 	vcShow := ShowVC(rootCmd, args)
 	assert.NotNil(vcShow)
+
+	toPrint := make(map[string]*compute.VCenter)
+
+	name := args[0]
+	val := &compute.VCenter{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printVC(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowVlan(t *testing.T) {
@@ -88,6 +122,17 @@ func TestShowVlan(t *testing.T) {
 	vlan := ShowVlan(rootCmd, args)
 
 	assert.NotNil(vlan)
+
+	toPrint := make(map[string]*network.VLANPool)
+
+	name := args[0]
+	val := &network.VLANPool{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printNets(toPrint)
+
+	assert.NotNil(printed)
 }
 
 //
@@ -105,6 +150,17 @@ func TestShowSw(t *testing.T) {
 	sw := ShowSw(rootCmd, args)
 
 	assert.NotNil(sw)
+
+	toPrint := make(map[string]*network.Switch)
+
+	name := args[0]
+	val := &network.Switch{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printSwitch(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowRack(t *testing.T) {
@@ -120,6 +176,17 @@ func TestShowRack(t *testing.T) {
 	rack := ShowRack(rootCmd, args)
 
 	assert.NotNil(rack)
+
+	toPrint := make(map[string]*dc.Rack)
+
+	name := args[0]
+	val := &dc.Rack{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printRack(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowLab(t *testing.T) {
@@ -136,10 +203,21 @@ func TestShowLab(t *testing.T) {
 	lab := ShowLab(rootCmd, args)
 
 	assert.NotNil(lab)
+
+	toPrint := make(map[string]*dc.Lab)
+
+	name := args[0]
+	val := &dc.Lab{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printLab(toPrint)
+
+	assert.NotNil(printed)
 }
 
 //
-
+//
 func TestShowESX(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -151,9 +229,20 @@ func TestShowESX(t *testing.T) {
 
 	rootCmd.AddCommand(esxCmd)
 
-	esv := ShowESX(rootCmd, args)
+	esx := ShowESX(rootCmd, args)
 
-	assert.NotNil(esv)
+	assert.NotNil(esx)
+
+	toPrint := make(map[string]*compute.ESX)
+
+	name := args[0]
+	val := &compute.ESX{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printESX(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowDC(t *testing.T) {
@@ -170,6 +259,16 @@ func TestShowDC(t *testing.T) {
 	dc := ShowDC(rootCmd, args)
 
 	assert.NotNil(dc)
+
+	name := args[0]
+
+	this, valDC := dcData()
+
+	this[name] = valDC
+
+	printed := printDC(this)
+
+	assert.NotNil(printed)
 }
 
 func TestShowUser(t *testing.T) {
@@ -184,6 +283,27 @@ func TestShowUser(t *testing.T) {
 	user := ShowUsr(rootCmd, args)
 
 	assert.NotNil(user)
+
+	toPrint := make(map[string]*auth.User)
+
+	name := args[0]
+	val := &auth.User{} //nolint:exhaustruct,exhaustivestruct
+
+	val.Key = &auth.RsaIdentity{}
+	val.PasswordHash = pkg.Password("user1")
+
+	val.Role = new(auth.Role)
+
+	val.Labels = pkg.CreateLabels()
+	val.Labels = pkg.GroupLabels(val.Labels, "group1")
+
+	val.Email = "sample@yahoo.com"
+
+	toPrint[name] = val
+
+	printed := printUser(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowReg(t *testing.T) {
@@ -198,6 +318,29 @@ func TestShowReg(t *testing.T) {
 	reg := ShowReg(rootCmd, args)
 
 	assert.NotNil(reg)
+
+	toPrint := make(map[string]*auth.User)
+
+	name := args[0]
+	val := &auth.User{} //nolint:exhaustruct,exhaustivestruct
+
+	val.Key = &auth.RsaIdentity{}
+	val.PasswordHash = pkg.Password("user1")
+
+	val.Role = new(auth.Role)
+
+	val.Labels = pkg.CreateLabels()
+	val.Labels = pkg.GroupLabels(val.Labels, "group1")
+
+	val.Email = "sample@yahoo.com"
+
+	toPrint[name] = val
+
+	toPrint[name] = val
+
+	printed := printUser(toPrint)
+
+	assert.NotNil(printed)
 }
 
 func TestShowIP(t *testing.T) {
@@ -212,6 +355,17 @@ func TestShowIP(t *testing.T) {
 	addr := ShowIP(rootCmd, args)
 
 	assert.NotNil(addr)
+
+	toPrint := make(map[string]*network.IPAddressPool)
+
+	name := args[0]
+	val := &network.IPAddressPool{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printIP(toPrint)
+
+	assert.NotNil(printed)
 }
 
 //
@@ -228,4 +382,15 @@ func TestShowVM(t *testing.T) {
 	machine := ShowVM(rootCmd, args)
 
 	assert.NotNil(machine)
+
+	toPrint := make(map[string]*compute.VM)
+
+	name := args[0]
+	val := &compute.VM{} //nolint:exhaustruct,exhaustivestruct
+
+	toPrint[name] = val
+
+	printed := printVM(toPrint)
+
+	assert.NotNil(printed)
 }
