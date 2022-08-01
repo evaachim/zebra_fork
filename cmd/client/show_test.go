@@ -25,6 +25,73 @@ func test() *cobra.Command {
 	return testCmd
 }
 
+func TestClient(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	/*configFile := New().Flag("config").Value.String()
+
+	config, e := Load(configFile)
+	assert.Nil(e)
+
+	key, err := auth.Load(testUserKeyFile)
+
+	assert.Nil(err)
+
+	assert.NotNil(key)
+
+	config.Email = "test@yahoo.com"
+
+	config.Key = key
+
+	config.User = "tester"
+
+	config.Defaults.Duration = 3
+
+	config.CACert = testCACertFile*/
+
+	c, err := NewClient(nil)
+	assert.Nil(c)
+	assert.Equal(ErrNoConfig, err)
+
+	cfg := new(Config)
+	c, err = NewClient(cfg)
+	assert.Nil(c)
+	assert.Equal(ErrNoEmail, err)
+
+	cfg.Email = "test@zebra.project-safafi.io"
+	c, err = NewClient(cfg)
+	assert.Nil(c)
+	assert.Equal(ErrNoPrivateKey, err)
+
+	key, err := auth.Load(testUserKeyFile)
+	assert.Nil(err)
+	assert.NotNil(key)
+
+	cfg.Key = key
+	c, err = NewClient(cfg)
+	assert.Equal(ErrNoCACert, err)
+	assert.Nil(c)
+
+	key.Public()
+	cfg.Key = key.Public()
+	c, err = NewClient(cfg)
+	assert.Nil(c)
+	assert.Equal(auth.ErrNoPrivateKey, err)
+
+	cfg.CACert = testCACertFile
+	cfg.Key = key
+	c, err = NewClient(cfg)
+	assert.Nil(err)
+	assert.NotNil(c)
+
+	cli, err := startClient(cfg)
+
+	assert.Nil(err)
+
+	assert.NotNil(cli)
+}
+
 func TestNewZebraCommand(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -141,7 +208,7 @@ func TestShowSw(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
-	args := []string{"switch", "test-case"}
+	args := []string{"sws", "test-case"}
 
 	netCmd := NewNetCmd(test())
 	rootCmd := New()
@@ -325,7 +392,7 @@ func TestShowReg(t *testing.T) {
 	val := &auth.User{} //nolint:exhaustruct,exhaustivestruct
 
 	val.Key = &auth.RsaIdentity{}
-	val.PasswordHash = pkg.Password("user1")
+	val.PasswordHash = pkg.Password("user2")
 
 	val.Role = new(auth.Role)
 

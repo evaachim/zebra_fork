@@ -11,6 +11,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func startClient(config *Config) (*Client, error) {
+	client, e := NewClient(config)
+
+	if e != nil {
+		return nil, e
+	}
+
+	return client, nil
+}
+
 // user info.
 func ShowUsr(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nfetch users\n")
@@ -22,10 +32,9 @@ func ShowUsr(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	// usrName := args[0]
@@ -78,9 +87,9 @@ func ShowReg(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	manyUsr := map[string]*auth.User{}
@@ -121,9 +130,9 @@ func ShowVlan(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	vlans := map[string]*network.VLANPool{}
@@ -158,10 +167,9 @@ func ShowSw(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	swName := args[0]
@@ -193,9 +201,9 @@ func ShowIP(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	IPName := args[0]
@@ -229,9 +237,9 @@ func ShowDC(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	centName := args[0]
@@ -264,9 +272,9 @@ func ShowLab(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	labName := args[0]
@@ -300,9 +308,9 @@ func ShowRack(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	vcName := args[0]
@@ -336,10 +344,9 @@ func ShowServ(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(configFile)
@@ -375,9 +382,9 @@ func ShowESX(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	esxName := args[0]
@@ -409,10 +416,9 @@ func ShowVC(cmd *cobra.Command, args []string) error {
 		return e
 	}
 
-	client, e := NewClient(config)
-
-	if e != nil {
-		return e
+	client, err := startClient(config)
+	if err != nil {
+		return err
 	}
 
 	vcName := args[0]
