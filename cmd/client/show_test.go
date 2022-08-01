@@ -8,7 +8,7 @@ import (
 )
 
 func test() *cobra.Command {
-	var testCmd = NewZebra()
+	testCmd := NewZebra()
 
 	return testCmd
 }

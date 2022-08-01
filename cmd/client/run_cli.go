@@ -548,7 +548,10 @@ func printVC(manyVC map[string]*compute.VCenter) {
 
 func printVM(manyVM map[string]*compute.VM) {
 	data := table.NewWriter()
-	data.AppendHeader(table.Row{"ID", "Name", "IP", "Type", "Credentials", "ESXID", "VCenter ID", "Management IP", "Labels"})
+	data.AppendHeader(table.Row{
+		"ID", "Name", "IP", "Type", "Credentials",
+		"ESXID", "VCenter ID", "Management IP", "Labels",
+	})
 
 	for piece, vm := range manyVM {
 		data.AppendRow(table.Row{
