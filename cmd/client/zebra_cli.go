@@ -17,6 +17,11 @@ zebra show data-centers
 zebra command will use the private RSA key that the user created
 before registration and authenticate so there is no need to login for the CLI
 all show commands will support label filters
+
+distributed among the following files:
+zebra_cli (command inventory)
+run_cli (runE functions)
+show_test (test file)
 */
 
 // create inventory of commands for the zebra cli.
