@@ -19,7 +19,7 @@ func Factory() zebra.ResourceFactory {
 	factory.Add(network.VLANPoolType(), network.EmptyVLANPool)
 
 	// dc resources
-	factory.Add(dc.DatacenterType(), dc.EmptyDatacenter)
+	factory.Add(dc.DataCenterType(), dc.EmptyDataCenter)
 	factory.Add(dc.LabType(), dc.EmptyLab)
 	factory.Add(dc.RackType(), dc.EmptyRack)
 

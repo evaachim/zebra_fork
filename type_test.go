@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Mock function that creates a sample type to use in tests.
+// Returns a zebra.Type and a zebra.TypeConstructor.
 func dummyType() (zebra.Type, zebra.TypeConstructor) {
 	t := zebra.Type{
 		Name:        "dummy",
@@ -18,6 +20,7 @@ func dummyType() (zebra.Type, zebra.TypeConstructor) {
 	}
 }
 
+// Test function for adding a new type.
 func TestAddNew(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -40,6 +43,7 @@ func TestAddNew(t *testing.T) {
 	assert.False(ok)
 }
 
+// Test function for te zebra.Factory.
 func TestFactory(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -58,6 +62,7 @@ func TestFactory(t *testing.T) {
 	assert.NotNil(resA.Factory())
 }
 
+// Test for the add function for adding to a ResourceMap.
 func TestAdd(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

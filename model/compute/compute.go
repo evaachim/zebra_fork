@@ -21,6 +21,7 @@ var ErrVCenterEmpty = errors.New("VCenter id is empty")
 
 var ErrServerIDEmtpy = errors.New("server id is empty")
 
+// Function that returns a zabra type of name server and compute category.
 func ServerType() zebra.Type {
 	return zebra.Type{
 		Name:        "compute.server",
@@ -45,6 +46,10 @@ type Server struct {
 	Model        string            `json:"model"`
 }
 
+// Function that creates a new resource of type server.
+//
+// It takes in a serial number, a name, an owner, and a group,
+// and returns a pointer to Server.
 func NewServer(serial, model, name, owner, group string) *Server {
 	return &Server{
 		BaseResource: *zebra.NewBaseResource(ServerType(), name, owner, group),
@@ -53,6 +58,7 @@ func NewServer(serial, model, name, owner, group string) *Server {
 	}
 }
 
+// Function to validate a server resource, given a pointer to the server struct.
 func (s *Server) Validate(ctx context.Context) error {
 	switch {
 	case s.SerialNumber == "":
@@ -74,6 +80,7 @@ func (s *Server) Validate(ctx context.Context) error {
 	return s.BaseResource.Validate(ctx)
 }
 
+// Function that returns a zabra type of name esx server and compute category.
 func ESXType() zebra.Type {
 	return zebra.Type{
 		Name:        "compute.esx",
@@ -96,6 +103,10 @@ type ESX struct {
 	IP          net.IP            `json:"ip"`
 }
 
+// Function that creates a new resource of type esx server.
+//
+// It takes in a server ID, a name, an owner, and a group,
+// and returns a pointer to ESX.
 func NewESX(serverID, name, owner, group string) *ESX {
 	return &ESX{
 		BaseResource: *zebra.NewBaseResource(ESXType(), name, owner, group),
@@ -103,6 +114,7 @@ func NewESX(serverID, name, owner, group string) *ESX {
 	}
 }
 
+// Function to validate an esx resource, given a pointer to the esx struct.
 func (e *ESX) Validate(ctx context.Context) error {
 	if e.IP == nil {
 		return ErrIPEmpty
@@ -123,6 +135,7 @@ func (e *ESX) Validate(ctx context.Context) error {
 	return e.BaseResource.Validate(ctx)
 }
 
+// Function that returns a zebra type of name vcenter and compute category.
 func VCenterType() zebra.Type {
 	return zebra.Type{
 		Name:        "compute.vcenter",
@@ -144,12 +157,17 @@ type VCenter struct {
 	IP          net.IP            `json:"ip"`
 }
 
+// Function that creates a new resource of type vcenter.
+//
+// It takes in a name, an owner, and a group,
+// and returns a pointer to VCenter.
 func NewVCenter(name, owner, group string) *VCenter {
 	return &VCenter{
 		BaseResource: *zebra.NewBaseResource(VCenterType(), name, owner, group),
 	}
 }
 
+// Function to validate a vcenter resource, given a pointer to the vcenter struct.
 func (v *VCenter) Validate(ctx context.Context) error {
 	if v.IP == nil {
 		return ErrIPEmpty
@@ -166,6 +184,7 @@ func (v *VCenter) Validate(ctx context.Context) error {
 	return v.BaseResource.Validate(ctx)
 }
 
+// Function that returns a zabra type of name vm and compute category.
 func VMType() zebra.Type {
 	return zebra.Type{
 		Name:        "compute.vm",
@@ -190,6 +209,10 @@ type VM struct {
 	VCenterID    string            `json:"vCenterId"`
 }
 
+// Function that creates a new resource of type vm.
+//
+// It takes in an esx ID, a name, an owner, and a group,
+// and returns a pointer to VM.
 func NewVM(esx, name, owner, group string) *VM {
 	return &VM{
 		BaseResource: *zebra.NewBaseResource(VMType(), name, owner, group),
@@ -197,6 +220,7 @@ func NewVM(esx, name, owner, group string) *VM {
 	}
 }
 
+// Function to validate a vm resource, given a pointer to the vm struct.
 func (v *VM) Validate(ctx context.Context) error {
 	switch {
 	case v.ESXID == "":

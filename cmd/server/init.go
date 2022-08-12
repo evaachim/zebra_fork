@@ -15,6 +15,7 @@ import (
 
 const ReadWriteOnly = 0o600
 
+// Function that initializes a cobra command and returns a pointer to a cobra command.
 func NewInitCmd() *cobra.Command {
 	initCmd := new(cobra.Command)
 
@@ -41,6 +42,10 @@ func NewInitCmd() *cobra.Command {
 	return initCmd
 }
 
+// The ServerConfig struct contains data for setting up the configuration.
+//
+// It contains two substructs: Store and Server, a string for the
+// authentication key, and a pointer to user.User.
 type ServerConfig struct {
 	Store struct {
 		Root string `json:"rootDir"`
@@ -56,6 +61,9 @@ type ServerConfig struct {
 	Admin *user.User `json:"admin"`
 }
 
+// Function that initializes the server.
+//
+// Takes in a pointer to the cobra command and returns an error or nil in the absence thereof.
 func initServer(cmd *cobra.Command, args []string) error {
 	cfgFile := cmd.Flag("config").Value.String()
 
@@ -84,6 +92,7 @@ func initServer(cmd *cobra.Command, args []string) error {
 	return ioutil.WriteFile(cfgFile, data, ReadWriteOnly)
 }
 
+// Function for creating the admin's configurations.
 func makeAdminConfig(cmd *cobra.Command) (*user.User, error) {
 	userConfig := cmd.Flag("user").Value.String()
 	cfg := &struct {

@@ -38,7 +38,7 @@ func NewMeta(resType Type, name string, group string, owner string) Meta {
 	labels.Add("system.group", group)
 
 	if name == "" {
-		// Make the short ID as the default name
+		// Make the short ID as the defaul name
 		name = id[:7]
 	}
 

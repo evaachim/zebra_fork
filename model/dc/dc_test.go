@@ -20,7 +20,7 @@ func TestDatacenter(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := context.Background()
-	d, ok := dc.EmptyDatacenter().(*dc.Datacenter)
+	d, ok := dc.EmptyDataCenter().(*dc.Datacenter)
 	assert.True(ok)
 	assert.NotNil(d.Validate(ctx))
 
@@ -34,6 +34,7 @@ func TestDatacenter(t *testing.T) {
 	assert.Nil(d.Validate(ctx))
 }
 
+// TestLab is a test function for the validate function on a lab resource.
 func TestLab(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

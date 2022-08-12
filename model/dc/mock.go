@@ -6,6 +6,9 @@ import (
 	"github.com/project-safari/zebra"
 )
 
+// Function that generates "mock" dcs as sample data.
+//
+// It takes in the number of resources to generate and returns a list of zebra resources.
 func MockDC(num int) []zebra.Resource {
 	rs := make([]zebra.Resource, 0, num)
 
@@ -23,6 +26,9 @@ func MockDC(num int) []zebra.Resource {
 	return rs
 }
 
+// Function that generates "mock" labs as sample data.
+//
+// It takes in the number of resources to generate and returns a list of zebra resources.
 func MockLab(num int) []zebra.Resource {
 	rs := make([]zebra.Resource, 0, num)
 
@@ -39,6 +45,9 @@ func MockLab(num int) []zebra.Resource {
 	return rs
 }
 
+// Function that generates "mock" racks as sample data.
+//
+// It takes in the number of resources to generate and returns a list of zebra resources.
 func MockRack(num int) []zebra.Resource {
 	maxRow := 10
 	rs := make([]zebra.Resource, 0, num)

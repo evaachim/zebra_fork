@@ -12,16 +12,17 @@ var ErrAddressEmpty = errors.New("address is empty")
 
 var ErrRowEmpty = errors.New("row is empty")
 
-func DatacenterType() zebra.Type {
+// Function that returns a zabra type of name datacenter and dc category.
+func DataCenterType() zebra.Type {
 	return zebra.Type{
 		Name:        "dc.datacenter",
 		Description: "data center",
 	}
 }
 
-func EmptyDatacenter() zebra.Resource {
+func EmptyDataCenter() zebra.Resource {
 	d := new(Datacenter)
-	d.Meta.Type = DatacenterType()
+	d.Meta.Type = DataCenterType()
 
 	return d
 }
@@ -33,10 +34,14 @@ type Datacenter struct {
 	Address string `json:"address"`
 }
 
-// create new dc resources.
+// Create new dc resources.
+// Function that creates a new resource of type datacenter.
+//
+// It takes in a name, an owner, and a group,
+// and returns a pointer to Datacenter.
 func NewDatacenter(address, name, owner, group string) *Datacenter {
 	return &Datacenter{
-		BaseResource: *zebra.NewBaseResource(DatacenterType(), name, owner, group),
+		BaseResource: *zebra.NewBaseResource(DataCenterType(), name, owner, group),
 		Address:      address,
 	}
 }
@@ -55,6 +60,7 @@ func (dc *Datacenter) Validate(ctx context.Context) error {
 	return dc.BaseResource.Validate(ctx)
 }
 
+// Function that returns a zabra type of name lab and dc category.
 func LabType() zebra.Type {
 	return zebra.Type{
 		Name:        "dc.lab",
@@ -72,13 +78,18 @@ func EmptyLab() zebra.Resource {
 // A Lab represents the lab consisting of a name and an ID.
 type Lab struct{ zebra.BaseResource }
 
-// create new dc resources.
+// Create new dc resources.
+// Function that creates a new resource of type lab.
+//
+// It takes in a name, an owner, and a group,
+// and returns a pointer to Lab.
 func NewLab(name, owner, group string) *Lab {
 	return &Lab{
 		BaseResource: *zebra.NewBaseResource(LabType(), name, owner, group),
 	}
 }
 
+// Function to validate an lab resource, given a pointer to the lab struct.
 func (l *Lab) Validate(ctx context.Context) error {
 	if l.Meta.Type.Name != "dc.lab" {
 		return zebra.ErrWrongType
@@ -87,6 +98,7 @@ func (l *Lab) Validate(ctx context.Context) error {
 	return l.BaseResource.Validate(ctx)
 }
 
+// Function that returns a zabra type of name rack and dc category.
 func RackType() zebra.Type {
 	return zebra.Type{
 		Name:        "dc.rack",
@@ -122,6 +134,10 @@ func (r *Rack) Validate(ctx context.Context) error {
 	return r.BaseResource.Validate(ctx)
 }
 
+// Function that creates a new resource of type rack.
+//
+// It takes in a name, an owner, and a group,
+// and returns a pointer to Rack.
 func NewRack(row, name, owner, group string) *Rack {
 	return &Rack{
 		BaseResource: *zebra.NewBaseResource(RackType(), name, owner, group),

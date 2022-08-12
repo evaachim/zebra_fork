@@ -33,14 +33,6 @@ func NewShow() *cobra.Command { //nolint:funlen
 		Short: "show resources",
 	}
 
-	showCmd.AddCommand(&cobra.Command{
-		Use:          "resources",
-		Short:        "show all the resources",
-		RunE:         showResources,
-		Args:         cobra.MaximumNArgs(0),
-		SilenceUsage: true,
-	})
-
 	// server resource types - server, esx, vcenter, vm.
 	showCmd.AddCommand(&cobra.Command{
 		Use:          "server",
@@ -194,9 +186,10 @@ func showResources(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// show server resource types - server, esx, vcenter, vm.
+// Show server resource types - server, esx, vcenter, vm.
+// Function for servers.
 func showServers(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "compute.server")
+	code, resMap, err := justGet(cmd, "resources", "Server")
 	if err != nil {
 		return err
 	}
@@ -205,15 +198,17 @@ func showServers(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["compute.server"]; ok {
+	if l, ok := resMap.Resources["Server"]; ok {
 		printServers(l.Resources)
 	}
 
 	return nil
 }
 
+// Show server resource types - server, esx, vcenter, vm.
+// Function for esx servers.
 func showESX(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "compute.esx")
+	code, resMap, err := justGet(cmd, "resources", "ESX")
 	if err != nil {
 		return err
 	}
@@ -222,15 +217,17 @@ func showESX(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["compute.esx"]; ok {
+	if l, ok := resMap.Resources["ESX"]; ok {
 		printESX(l.Resources)
 	}
 
 	return nil
 }
 
+// Show server resource types - server, esx, vcenter, vm.
+// Function for VCenters.
 func showVCenters(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "compute.vcenter")
+	code, resMap, err := justGet(cmd, "resources", "VCenter")
 	if err != nil {
 		return err
 	}
@@ -239,15 +236,17 @@ func showVCenters(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["compute.vcenter"]; ok {
+	if l, ok := resMap.Resources["VCenter"]; ok {
 		printVCenters(l.Resources)
 	}
 
 	return nil
 }
 
+// Show server resource types - server, esx, vcenter, vm.
+// Function for virtual machines.
 func showVM(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "compute.vm")
+	code, resMap, err := justGet(cmd, "resources", "VM")
 	if err != nil {
 		return err
 	}
@@ -256,16 +255,17 @@ func showVM(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["compute.vm"]; ok {
+	if l, ok := resMap.Resources["VM"]; ok {
 		printVM(l.Resources)
 	}
 
 	return nil
 }
 
-// show dc resource types - datacenter, lab, rack.
+// Show dc resource types - datacenter, lab, rack.
+// Function for datacenters.
 func showDatacenters(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "dc.datacenter")
+	code, resMap, err := justGet(cmd, "resources", "Datacenter")
 	if err != nil {
 		return err
 	}
@@ -274,15 +274,17 @@ func showDatacenters(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["dc.datacenter"]; ok {
+	if l, ok := resMap.Resources["Datacenter"]; ok {
 		printDatacenters(l.Resources)
 	}
 
 	return nil
 }
 
+// Show dc resource types - datacenter, lab, rack.
+// Function for labs.
 func showLabs(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "dc.lab")
+	code, resMap, err := justGet(cmd, "resources", "Lab")
 	if err != nil {
 		return err
 	}
@@ -291,15 +293,17 @@ func showLabs(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["dc.lab"]; ok {
+	if l, ok := resMap.Resources["Lab"]; ok {
 		printLabs(l.Resources)
 	}
 
 	return nil
 }
 
+// Show dc resource types - datacenter, lab, rack.
+// Function for racks.
 func showRacks(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "dc.rack")
+	code, resMap, err := justGet(cmd, "resources", "Rack")
 	if err != nil {
 		return err
 	}
@@ -308,16 +312,17 @@ func showRacks(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["dc.rack"]; ok {
+	if l, ok := resMap.Resources["Rack"]; ok {
 		printRacks(l.Resources)
 	}
 
 	return nil
 }
 
-// show network resource types: vlan, switch, IPAddressPool.
+// Show network resource types: vlan, switch, IPAddressPool.
+// Function for vlan pools.
 func showVlans(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "network.vlanPool")
+	code, resMap, err := justGet(cmd, "resources", "VLANPool")
 	if err != nil {
 		return err
 	}
@@ -326,15 +331,17 @@ func showVlans(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["network.vlanPool"]; ok {
+	if l, ok := resMap.Resources["VLANPool"]; ok {
 		printVlans(l.Resources)
 	}
 
 	return nil
 }
 
+// Show network resource types: vlan, switch, IPAddressPool.
+// Function for switches.
 func showSwitches(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "network.switch")
+	code, resMap, err := justGet(cmd, "resources", "Switch")
 	if err != nil {
 		return err
 	}
@@ -343,15 +350,17 @@ func showSwitches(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["network.switch"]; ok {
+	if l, ok := resMap.Resources["Switch"]; ok {
 		printSwitches(l.Resources)
 	}
 
 	return nil
 }
 
+// Show network resource types: vlan, switch, IPAddressPool.
+// Function for IP address pools.
 func showIPs(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "network.ipAddressPool")
+	code, resMap, err := justGet(cmd, "resources", "IPAddressPool")
 	if err != nil {
 		return err
 	}
@@ -360,15 +369,16 @@ func showIPs(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["network.ipAddressPool"]; ok {
+	if l, ok := resMap.Resources["IPAddressPool"]; ok {
 		printIPs(l.Resources)
 	}
 
 	return nil
 }
 
+// Function to show leases.
 func showLeases(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "system.lease")
+	code, resMap, err := justGet(cmd, "resources", "Lease")
 	if err != nil {
 		return err
 	}
@@ -377,15 +387,16 @@ func showLeases(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["system.lease"]; ok {
+	if l, ok := resMap.Resources["Lease"]; ok {
 		printLeases(l.Resources)
 	}
 
 	return nil
 }
 
+// Function to show users.
 func showUsers(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "system.user")
+	code, resMap, err := justGet(cmd, "resources", "User")
 	if err != nil {
 		return err
 	}
@@ -394,15 +405,16 @@ func showUsers(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["system.user"]; ok {
+	if l, ok := resMap.Resources["User"]; ok {
 		printUsers(l.Resources)
 	}
 
 	return nil
 }
 
+// Function to show registrations.
 func showRegistrations(cmd *cobra.Command, args []string) error {
-	code, resMap, err := justGet(cmd, "resources", "system.user")
+	code, resMap, err := justGet(cmd, "resources", "Registration")
 	if err != nil {
 		return err
 	}
@@ -411,13 +423,14 @@ func showRegistrations(cmd *cobra.Command, args []string) error {
 		return ErrQuery
 	}
 
-	if l, ok := resMap.Resources["system.user"]; ok {
+	if l, ok := resMap.Resources["Registration"]; ok {
 		printUsers(l.Resources)
 	}
 
 	return nil
 }
 
+// Function to show public keys.
 func showPublicKey(cmd *cobra.Command, args []string) error {
 	cfgFile := cmd.Flag("config").Value.String()
 
@@ -431,10 +444,12 @@ func showPublicKey(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// Function to show the state of a resource.
 func state(r zebra.Resource) string {
 	return r.GetStatus().State.String()
 }
 
+// Function to show who uses a resource.
 func usedBy(r zebra.Resource) string {
 	s := r.GetStatus().UsedBy
 	if s == "" {
@@ -461,7 +476,8 @@ func printResources(resources *zebra.ResourceMap) {
 	fmt.Println(tw.Render())
 }
 
-// print server resource types - servers, esx, vcenters, vms.
+// Print server resource types - servers, esx, vcenters, vms.
+// Function for servers.
 func printServers(servers []zebra.Resource) {
 	tw := table.NewWriter()
 	tw.AppendHeader(table.Row{"Name", "Board IP", "Model", "Serialnumber", "User", "Status"})
@@ -482,6 +498,8 @@ func printServers(servers []zebra.Resource) {
 	fmt.Println(tw.Render())
 }
 
+// Print server resource types - servers, esx, vcenters, vms.
+// Function for esx.
 func printESX(manyESX []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "Server ID", "IP", "Credentials", "User", "Status"})
@@ -502,6 +520,8 @@ func printESX(manyESX []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print server resource types - servers, esx, vcenters, vms.
+// Function for vcenters.
 func printVCenters(manyVC []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "IP", "Credentials", "User", "Status"})
@@ -521,6 +541,8 @@ func printVCenters(manyVC []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print server resource types - servers, esx, vcenters, vms.
+// Function for virtual machines.
 func printVM(manyVM []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "IP", "Credentials", "ESXID", "VCID", "User", "Status"})
@@ -542,7 +564,8 @@ func printVM(manyVM []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
-// print dc resource types - datacenter, lab, rack.
+// Print dc resource types - datacenter, lab, rack.
+// Function for datacenters.
 func printDatacenters(dcs []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "Address", "User", "Status"})
@@ -561,6 +584,8 @@ func printDatacenters(dcs []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print dc resource types - datacenter, lab, rack.
+// Function for labs.
 func printLabs(labs []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "User", "Status"})
@@ -578,6 +603,8 @@ func printLabs(labs []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print dc resource types - datacenter, lab, rack.
+// Function for racks.
 func printRacks(racks []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "Row", "User", "Status"})
@@ -596,7 +623,8 @@ func printRacks(racks []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
-// print network resource types: vlan, switch, IPAddressPool.
+// Print network resource types: vlan, switch, IPAddressPool.
+// Function for vlan pools.
 func printVlans(vlans []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"VLanPool", "User", "Status"})
@@ -616,6 +644,8 @@ func printVlans(vlans []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print network resource types: vlan, switch, IPAddressPool.
+// Function for switches.
 func printSwitches(switches []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{
@@ -641,6 +671,8 @@ func printSwitches(switches []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Print network resource types: vlan, switch, IPAddressPool.
+// Function for IP address pools.
 func printIPs(ips []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Subnets", "User", "Status"})
@@ -658,6 +690,7 @@ func printIPs(ips []zebra.Resource) {
 	fmt.Println(data.Render())
 }
 
+// Function to print leases.
 func printLeases(leases []zebra.Resource) {
 	tw := table.NewWriter()
 	tw.AppendHeader(table.Row{
@@ -692,6 +725,7 @@ func printLeases(leases []zebra.Resource) {
 	fmt.Println(tw.Render())
 }
 
+// Function to print the users.
 func printUsers(users []zebra.Resource) {
 	data := table.NewWriter()
 	data.AppendHeader(table.Row{"Name", "Role", "Privileges", "Status"})

@@ -58,6 +58,7 @@ func (l Labels) MatchNotIn(key string, values ...string) bool {
 	return l.HasKey(key) && !l.MatchIn(key, values...)
 }
 
+// The validate function ensures that there is at least a mandatory system group label.
 func (l Labels) Validate() error {
 	v, ok := l["system.group"]
 	if !ok || v == "" {

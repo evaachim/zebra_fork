@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Mock function that makes a query request to be used in tests.
 func makeQueryRequest(assert *assert.Assertions, resources *ResourceAPI, q *QueryRequest) *http.Request {
 	ctx := context.WithValue(context.Background(), ResourcesCtxKey, resources)
 	req, err := http.NewRequestWithContext(ctx, "GET", "/api/v1/resources", nil)
@@ -30,6 +31,7 @@ func makeQueryRequest(assert *assert.Assertions, resources *ResourceAPI, q *Quer
 	return req
 }
 
+// Function to test making a query.
 func TestQuery(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -74,6 +76,7 @@ func TestQuery(t *testing.T) {
 	assert.Equal(http.StatusOK, rr.Code)
 }
 
+// Function to test making an empty query.
 func TestEmptyQuery(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -101,6 +104,7 @@ func TestEmptyQuery(t *testing.T) {
 	assert.Equal(http.StatusOK, rr.Code)
 }
 
+// Function to test making an incorrect or bad query.
 func TestBadQuery(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -157,6 +161,7 @@ func TestBadQuery(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, rr.Code)
 }
 
+// Function to test making an invalid query.
 func TestInvalidQuery(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -196,6 +201,7 @@ func TestInvalidQuery(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, rr.Code)
 }
 
+// Test for a rew resource API.
 func TestNew(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -203,6 +209,7 @@ func TestNew(t *testing.T) {
 	assert.NotNil(NewResourceAPI(nil))
 }
 
+// Test for initialization.
 func TestInitialize(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -217,6 +224,7 @@ func TestInitialize(t *testing.T) {
 	assert.Nil(api.Initialize(root))
 }
 
+// Test for posting a resource.
 func TestPostResource(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -262,6 +270,7 @@ func TestPostResource(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, rr.Code)
 }
 
+// Test for deleting a resource.
 func TestDeleteResource(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -314,6 +323,7 @@ func TestDeleteResource(t *testing.T) {
 	assert.Empty(myAPI.Store.Query().Resources)
 }
 
+// Function to test making a valid query.
 func TestValidateQueries(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -349,6 +359,7 @@ func TestApplyFunc(t *testing.T) {
 	assert.NotNil(applyFunc(resMap, f))
 }
 
+// Mock function that creates a request to be used in tests.
 func createRequest(assert *assert.Assertions, method string, url string,
 	body string, api *ResourceAPI,
 ) *http.Request {

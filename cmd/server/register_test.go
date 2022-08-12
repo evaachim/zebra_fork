@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Test function for creating a new user.
 func TestCreateNewUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

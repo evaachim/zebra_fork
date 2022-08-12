@@ -12,11 +12,13 @@ import (
 	"github.com/project-safari/zebra/store"
 )
 
+// ResourceAPI is a struct that contains resources for the apis.
 type ResourceAPI struct {
 	factory zebra.ResourceFactory
 	Store   zebra.Store
 }
 
+// QueryRequest struct is a struct that contains data for possible requests.
 type QueryRequest struct {
 	IDs        []string      `json:"ids,omitempty"`
 	Types      []string      `json:"types,omitempty"`
@@ -24,8 +26,10 @@ type QueryRequest struct {
 	Properties []zebra.Query `json:"properties,omitempty"`
 }
 
+// ErrQueryRequest is an error that occurs if the GET request is invalid.
 var ErrQueryRequest = errors.New("invalid GET query request body")
 
+// Validate function for the query request.
 func (qr *QueryRequest) Validate(ctx context.Context) error {
 	id := len(qr.IDs) != 0
 	t := len(qr.Types) != 0
@@ -46,6 +50,7 @@ func (qr *QueryRequest) Validate(ctx context.Context) error {
 	return validateQueries(qr.Properties)
 }
 
+// Function that returns a new struct with resources for the API.
 func NewResourceAPI(factory zebra.ResourceFactory) *ResourceAPI {
 	return &ResourceAPI{
 		factory: factory,
@@ -99,6 +104,7 @@ func validateResources(ctx context.Context, resMap *zebra.ResourceMap) error {
 	return nil
 }
 
+// Function thathandles a query and retursn a httprouter.Handle.
 func handleQuery() httprouter.Handle {
 	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()
@@ -159,6 +165,7 @@ func handleQuery() httprouter.Handle {
 	}
 }
 
+// Function that handles a post nad returns a httprouter.Handle.
 func handlePost() httprouter.Handle {
 	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()
@@ -202,6 +209,7 @@ func handlePost() httprouter.Handle {
 	}
 }
 
+// Function that handles a delete nad returns a httprouter.Handle.
 func handleDelete() httprouter.Handle {
 	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := req.Context()

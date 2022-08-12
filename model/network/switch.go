@@ -18,6 +18,7 @@ var ErrModelEmpty = errors.New("model is empty")
 
 var ErrNumPortsEmpty = errors.New("number of ports is 0")
 
+// Function that returns a zabra type of name switch and network category.
 func SwitchType() zebra.Type {
 	return zebra.Type{
 		Name:        "network.switch",
@@ -68,6 +69,10 @@ func (s *Switch) Validate(ctx context.Context) error {
 	return s.BaseResource.Validate(ctx)
 }
 
+// Function that creates a new resource of type switch.
+//
+// It takes in a name, an owner, and a group,
+// and returns a pointer to Switch.
 func NewSwitch(name, owner, group string) *Switch {
 	r := zebra.NewBaseResource(SwitchType(), name, owner, group)
 
@@ -76,6 +81,9 @@ func NewSwitch(name, owner, group string) *Switch {
 	}
 }
 
+// Function that generates "mock" switches as sample data.
+//
+// It takes in the number of resources to generate and returns a list of zebra resources.
 func MockSwitch(num int) []zebra.Resource {
 	models := []string{"SWITCH-MODEL-1", "SWITCH-MODEL-2", "SWITCH-MODEL-3"}
 	rs := make([]zebra.Resource, 0, num)

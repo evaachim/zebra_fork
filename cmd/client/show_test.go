@@ -23,6 +23,7 @@ func test() *cobra.Command {
 	return showCmd
 }
 
+// Function that tests the client.
 func TestClient(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

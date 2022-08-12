@@ -21,10 +21,14 @@ type Query struct {
 	Values []string `json:"values"`
 }
 
+// Errors that occur when something is wrong about a resource.
 var (
-	ErrNotFound        = errors.New("resource not found in store")
+	// ErrNotFound happens if the resource does not exist in the store.
+	ErrNotFound = errors.New("resource not found in store")
+	// ErrInvalidResource happens if the resource is invalid.
 	ErrInvalidResource = errors.New("create/delete on invalid resource")
-	ErrInvalidQuery    = errors.New("invalid query")
+	// ErrInvalidQuery happens if the query is invalid.
+	ErrInvalidQuery = errors.New("invalid query")
 )
 
 // Store interface requires basic store functionalities.
@@ -42,6 +46,8 @@ type Store interface {
 	QueryProperty(query Query) (*ResourceMap, error)
 }
 
+// Validate function for the query.
+// It returns an error or nil in the absence thereof.
 func (q *Query) Validate() error {
 	if (q.Op == MatchEqual || q.Op == MatchNotEqual) && len(q.Values) != 1 {
 		return ErrInvalidQuery
