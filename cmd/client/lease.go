@@ -12,10 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ErrCreateLease returns an error message if a request.
+//
+// Used for creating a lease on a certain resource fails.
 var ErrCreateLease = errors.New("error creating resource")
 
+// The default number of resources, currently set to 3.
 const DefaultResourceCount = 3
 
+// Command for new lease(s).
 func NewLease() *cobra.Command {
 	leaseCmd := &cobra.Command{
 		Use:          "lease",
@@ -31,6 +36,7 @@ func NewLease() *cobra.Command {
 	return leaseCmd
 }
 
+// Creating a request for a new lease.
 func leaseRequest(cmd *cobra.Command, args []string) error {
 	cfg, req, resReq, err := makeLeaseReq(cmd, args)
 	if err != nil {
@@ -54,6 +60,15 @@ func leaseRequest(cmd *cobra.Command, args []string) error {
 	return err
 }
 
+// Function to complete the lease request.
+//
+// Uses the cobra command and string arguments.
+//
+// Loads the config file, gets the count, resource type, and resource group.
+//
+// Helps get the new lease according to the request.
+//
+// Returns pointers to the config, a resource map, a lease resource request, and (a) potential error(s).
 func makeLeaseReq(cmd *cobra.Command, args []string) (*Config, *zebra.ResourceMap, *lease.ResourceReq, error) {
 	cfgFile := cmd.Flag("config").Value.String()
 

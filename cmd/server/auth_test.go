@@ -221,7 +221,7 @@ func TestBadJWT(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 	assert.Equal(http.StatusUnauthorized, rr.Code)
 
-	// bad token
+	// Bad token
 	req, err = http.NewRequestWithContext(ctx, "GET", "/", nil)
 	req.AddCookie(makeCookie("badjwt"))
 	assert.Nil(err)

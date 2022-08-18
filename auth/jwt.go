@@ -11,6 +11,8 @@ var ErrInvalidToken = errors.New("invalid jwt token")
 
 const TokenDuration = time.Minute * 10
 
+// Struct that helps manage claims.
+// It contains StandardClaims, a Role, and an email address.
 type Claims struct {
 	jwt.StandardClaims
 	Role  *Role  `json:"role"`

@@ -18,6 +18,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ErrQuery returns an error message if there is an error in querring the server.
+//
+// Error usually occurs when http status is not ok (i.e. when http.StatusOK  =/= 200).
 var ErrQuery = errors.New("server query failed")
 
 type QueryRequest struct {
@@ -27,13 +30,14 @@ type QueryRequest struct {
 	Properties []zebra.Query `json:"properties,omitempty"`
 }
 
+// Function for the new show command and its subsequent commands.
 func NewShow() *cobra.Command { //nolint:funlen
 	showCmd := &cobra.Command{
 		Use:   "show",
 		Short: "show resources",
 	}
 
-	// server resource types - server, esx, vcenter, vm.
+	// Server resource types - server, esx, vcenter, vm.
 	showCmd.AddCommand(&cobra.Command{
 		Use:          "server",
 		Short:        "show the specified servers",
@@ -66,7 +70,7 @@ func NewShow() *cobra.Command { //nolint:funlen
 		SilenceUsage: true,
 	})
 
-	// dc resource types - datacenter, lab, rack.
+	// Dc resource types - datacenter, lab, rack.
 	showCmd.AddCommand(&cobra.Command{
 		Use:          "datacenter",
 		Short:        "show the specified datacenters",
@@ -91,7 +95,7 @@ func NewShow() *cobra.Command { //nolint:funlen
 		SilenceUsage: true,
 	})
 
-	// network resource types: vlan, switch, IPAddressPool.
+	// Network resource types: vlan, switch, IPAddressPool.
 	showCmd.AddCommand(&cobra.Command{
 		Use:          "vlan",
 		Short:        "show the specified vlans",
@@ -151,6 +155,8 @@ func NewShow() *cobra.Command { //nolint:funlen
 	return showCmd
 }
 
+// Function that eases the process of getting the necessary dta for the resource(s).
+// Returns int, a pointer to a resource map, and (a) potential error(s).
 func justGet(cmd *cobra.Command, p string, resTypes ...string) (int, *zebra.ResourceMap, error) {
 	cfgFile := cmd.Flag("config").Value.String()
 
@@ -459,6 +465,7 @@ func usedBy(r zebra.Resource) string {
 	return s
 }
 
+// Print resources.
 func printResources(resources *zebra.ResourceMap) {
 	tw := table.NewWriter()
 	tw.AppendHeader(table.Row{"Name", "Type", "Status"})

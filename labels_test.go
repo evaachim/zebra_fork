@@ -9,6 +9,10 @@ import (
 )
 
 // Test function for label functions.
+// Various tests for labels.
+// Includes tests for matching equality / inequality of labels.
+// Matching existence of a label key.
+// Tests are performed for ovarious quantities labels in the labels map.
 func TestLabels(t *testing.T) {
 	t.Parallel()
 

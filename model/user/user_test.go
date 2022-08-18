@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const userType = "user"
+
+// Test for crud operations on users, with or without the mandatory system.group label.
 func TestUser(t *testing.T) { //nolint:funlen
 	t.Parallel()
 
@@ -56,7 +59,10 @@ func TestUser(t *testing.T) { //nolint:funlen
 
 	god.PasswordHash = user.HashPassword("youhaveachoice")
 	god.Email = "god@heaven.com"
-	assert.NotNil(god.Validate(ctx)) // it will have an error because it does not have group label, so not nil.
+
+	// This is not nil because this resource does not have the mandatory system.group label.
+	// The error validation will automatically return the error "missing mandatory group label" therefore not nil.
+	assert.NotNil(god.Validate(ctx))
 
 	adamKey, err := auth.Generate()
 	assert.Nil(err)

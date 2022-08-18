@@ -62,7 +62,7 @@ func makeLabelRequest(assert *assert.Assertions, resources *ResourceAPI, labels 
 	return req
 }
 
-// Test for a bad request for labels.
+// Test for a request with invalid / incorrect label.
 func TestBadLabelReq(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

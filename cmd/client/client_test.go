@@ -145,6 +145,7 @@ func TestClientDo(t *testing.T) {
 	assert.Equal(http.StatusOK, code)
 }
 
+// Mock function for a starting and returning a new server for the tests.
 // Mock function to create/start a server to be used in tests.
 // Returns a pointer to a httptest.
 func makeServer(assert *assert.Assertions) *httptest.Server {

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Test function for for a default status.
 func TestDefaultStatus(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

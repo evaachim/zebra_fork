@@ -16,7 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// to make it easier.
+// To make it easier.
+// Mock function that creates a new show command.
 func test() *cobra.Command {
 	showCmd := NewShow()
 
@@ -70,7 +71,7 @@ func TestClient(t *testing.T) {
 	assert.NotNil(cli)
 }
 
-// tests for adding new show command(s).
+// Tests for adding new show command(s).
 func TestNewZebraCommand(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -79,7 +80,7 @@ func TestNewZebraCommand(t *testing.T) {
 	assert.NotNil(cmd)
 }
 
-// tests for resources.
+// Tests for resources.
 func TestShowRes(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -98,7 +99,7 @@ func TestShowRes(t *testing.T) {
 	assert.NotNil(res)
 }
 
-// showing lease status and information.
+// Showing lease status and information.
 func TestShowLease(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -346,7 +347,7 @@ func TestPrintResources(t *testing.T) { //nolint:funlen
 
 	rootCmd.AddCommand(test())
 
-	// test with only one resource.
+	// Test with only one resource.
 
 	fact := model.Factory()
 
@@ -359,7 +360,7 @@ func TestPrintResources(t *testing.T) { //nolint:funlen
 
 	printResources(resMap)
 
-	// test with many resources.
+	// Test with many resources.
 
 	bigMap := zebra.NewResourceMap(fact)
 
@@ -376,7 +377,7 @@ func TestPrintResources(t *testing.T) { //nolint:funlen
 
 	printResources(bigMap)
 
-	// test with all resources.
+	// Test with all resources.
 
 	allMap := zebra.NewResourceMap(fact)
 	assert.NotNil(allMap)

@@ -30,7 +30,7 @@ func NewConfigure() *cobra.Command {
 		SilenceUsage: true,
 	}
 
-	// add config command
+	// Add config command
 	addConfigCommands(configCmd)
 
 	configCmd.AddCommand(&cobra.Command{

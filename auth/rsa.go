@@ -29,6 +29,8 @@ type RsaIdentity struct {
 	private *rsa.PrivateKey
 }
 
+// Function for generation of rsa key, returns the rsa and a(n) (potential) error.
+
 func Generate() (*RsaIdentity, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
 
@@ -38,12 +40,16 @@ func Generate() (*RsaIdentity, error) {
 	}, err
 }
 
+// Function to empty rsa.
+
 func Empty() *RsaIdentity {
 	return &RsaIdentity{
 		private: nil,
 		public:  nil,
 	}
 }
+
+// Function to load rsa from file, returns the rsa and a(n) (potential) error.
 
 func Load(rsaFile string) (*RsaIdentity, error) {
 	rsaText, err := ioutil.ReadFile(rsaFile)
@@ -58,6 +64,8 @@ func Load(rsaFile string) (*RsaIdentity, error) {
 
 	return id, nil
 }
+
+// Function to save rsa to file, returns an error.
 
 func (r *RsaIdentity) Save(rsaFile string) error {
 	data, err := r.MarshalText()
@@ -116,6 +124,8 @@ func (r *RsaIdentity) UnmarshalText(text []byte) error {
 	return ErrUnknownPEMBlock
 }
 
+// Function to make rsa to string.
+
 func (r *RsaIdentity) String() string {
 	b, e := r.MarshalText()
 	if e != nil {
@@ -142,10 +152,12 @@ func RsaPubIdentity(pub *rsa.PublicKey) *RsaIdentity {
 	}
 }
 
+// Function for public rsa, returns the public key of rsa.
 func (r *RsaIdentity) PublicKey() *rsa.PublicKey {
 	return r.public
 }
 
+// Function to set the public key of a RsaIdentity.
 func (r *RsaIdentity) Public() *RsaIdentity {
 	return &RsaIdentity{
 		public:  r.public,
@@ -153,7 +165,7 @@ func (r *RsaIdentity) Public() *RsaIdentity {
 	}
 }
 
-// Sign returns a signature made by combining the message and the signers private key
+// Sign returns a signature made by combining the message and the signers private key.
 // With the r.Verify function, the signature can be checked.
 func (r *RsaIdentity) Sign(msg []byte) ([]byte, error) {
 	hs := r.getHashSum(msg)

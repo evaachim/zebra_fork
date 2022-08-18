@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Test function for keys.
 func TestKey(t *testing.T) {
 	t.Parallel()
 
