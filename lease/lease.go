@@ -99,7 +99,7 @@ func (l *Lease) Activate() error {
 	l.ActivationTime = time.Now()
 	l.Status.State = zebra.Active
 
-	l.Notify()
+	l.Notify() //nolint:errcheck
 
 	return nil
 }
