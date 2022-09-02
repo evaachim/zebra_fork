@@ -19,7 +19,7 @@ func (l *Lease) Notify() error {
 	addr := host + ":" + port
 
 	subject := "Lease request fulfilled. "
-	body := "\nThe lease request for " + l.Type + " for lease ID: " + l.ID + " is ready to be used."
+	body := "\nThe lease request for " + l.Type + " with lease ID: " + l.ID + " is ready to be used."
 
 	notification := []byte(subject + body)
 
