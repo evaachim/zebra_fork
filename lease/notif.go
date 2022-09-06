@@ -1,10 +1,10 @@
 package lease
 
-import (
-	"net/smtp"
-)
+import "net/smtp"
 
 func (l *Lease) Notify() error {
+	// may need to create a user that manages the system.
+	// ten use that for sending notifications.
 	from := " admin@zebra.project-safari.io"
 	pwd := "admin123"
 
