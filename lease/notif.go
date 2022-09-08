@@ -4,7 +4,9 @@ import "net/smtp"
 
 func (l *Lease) Notify() error {
 	// may need to create a user that manages the system.
-	// ten use that for sending notifications.
+	// would need a password and email address for that person.
+	// that would probably need to be someone who manages the tool rather than a regular admin.
+	// then use that for sending notifications.
 	from := " admin@zebra.project-safari.io"
 	pwd := "admin123"
 
