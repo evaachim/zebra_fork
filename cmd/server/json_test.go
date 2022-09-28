@@ -14,7 +14,6 @@ import (
 // errFake is a mock error to be used in tests.
 var errFake = errors.New("fake error")
 
-// Mock reader struct used in unit tests for json read / write.
 type fakeReader struct {
 	err bool
 }
@@ -27,7 +26,6 @@ func (f fakeReader) Read(b []byte) (int, error) {
 	return 0, io.EOF
 }
 
-// Mock writer struct used in unit tests for json read / write.
 type fakeWriter struct {
 	status int
 	header http.Header

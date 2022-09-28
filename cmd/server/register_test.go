@@ -37,7 +37,6 @@ func TestCreateNewUser(t *testing.T) {
 	assert.NotNil(testUser.PasswordHash)
 }
 
-// Tests for updating of existing users.
 func TestUpdateUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -60,7 +59,6 @@ func TestUpdateUser(t *testing.T) {
 	assert.NotEqual(oldpassword, testUser.PasswordHash)
 }
 
-// Tests for deleting existing users.
 func TestDeleteUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -86,8 +84,6 @@ type RData struct {
 	Key      *auth.RsaIdentity `json:"key"`
 }
 
-// function to set new registration data.
-/// returns a pointer to RData, given name, password, email, and key info.
 func newRData(name string, password string, email string, needKey bool) *RData {
 	return &RData{
 		Name:     name,
@@ -165,7 +161,6 @@ func TestRegister(t *testing.T) {
 	testForward(assert, h)
 }
 
-// Tests for user that has no key.
 func TestNoKeyUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -197,7 +192,6 @@ func TestNoKeyUser(t *testing.T) {
 	assert.Equal(http.StatusInternalServerError, rr.Code)
 }
 
-// Tests for requests on the same user.
 func TestSameUser(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -228,7 +222,6 @@ func TestSameUser(t *testing.T) {
 	assert.Equal(http.StatusForbidden, rr.Code)
 }
 
-// Tests for invalid requests.
 func TestBadRequest(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
@@ -264,7 +257,6 @@ func TestBadRequest(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, rr.Code)
 }
 
-// Test for deleting only on user from the store.
 func TestDelete1User(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// Possible errors wit user credentials.
+// Possible errors with user credentials.
 var (
 	ErrNoCACert     = errors.New("zebra CA certificate file is not conifugred")
 	ErrNoConfig     = errors.New("zebra config file is not specified")

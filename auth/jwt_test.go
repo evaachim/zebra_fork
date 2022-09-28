@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test for claims functions.
 func TestClaims(t *testing.T) {
 	t.Parallel()
 

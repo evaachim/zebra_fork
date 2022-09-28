@@ -86,7 +86,7 @@ func matchLabels(matchSet map[string]struct{}, rMap *zebra.ResourceMap) map[stri
 	return makeLabelValues(labelSet)
 }
 
-// Functions that makes the values for the labels and assignes them to the correct key in the map.
+// Function that creates label values.
 func makeLabelValues(labelSet map[string]map[string]struct{}) map[string][]string {
 	labelVals := make(map[string][]string)
 

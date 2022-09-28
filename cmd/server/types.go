@@ -31,7 +31,7 @@ func handleTypes() httprouter.Handle {
 		}{Types: []zebra.Type{}}
 
 		if len(typeReq.Types) == 0 {
-			// Return all types.
+			// return all types
 			typeRes.Types = allTypes.Types()
 		} else {
 			for _, t := range typeReq.Types {

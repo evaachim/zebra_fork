@@ -15,11 +15,7 @@ import (
 
 const ReadWriteOnly = 0o600
 
-// New command that initializes and creates default server configs for the zebra tool.
-//
-// It has flags for: store, addresss, cert, key, user, password, auth-key.
-//
-// It returns *cobra.Command with these setups.
+// Function that initializes a cobra command and returns a pointer to a cobra command.
 func NewInitCmd() *cobra.Command {
 	initCmd := new(cobra.Command)
 
