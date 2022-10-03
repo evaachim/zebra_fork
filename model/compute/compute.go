@@ -21,25 +21,6 @@ var ErrVCenterEmpty = errors.New("VCenter id is empty")
 
 var ErrServerIDEmtpy = errors.New("server id is empty")
 
-// Suggested containment model
-/*
-type ComputeContents struct {
-	ServerContents  ComputeServer `json:"server"`
-	ESXContents     ESX           `json:"esx"`
-	VMContents      VM            `json:"vm"`
-	VCenterContents VCenter       `json:"vc"`
-}
-
-type ComputeServer struct {
-	CS              Server  `json:"server"`
-	ESXServer       ESX     `json:"esx"`
-	VMContents      VM      `json:"vm"`
-	VCenterContents VCenter `json:"vc"`
-}
-
-// add the DCContents struct to each dc resource
-*/
-
 // Function that returns a zabra type of name server and compute category.
 func ServerType() zebra.Type {
 	return zebra.Type{
