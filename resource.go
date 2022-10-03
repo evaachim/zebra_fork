@@ -4,6 +4,54 @@ import (
 	"context"
 )
 
+/*
+
+Alt containment method
+
+Something like this:
+
+type ResourceContents struct {
+	left  *ResourceContents
+	right *ResourceContents
+	// data  BaseResource
+	data interface{}
+}
+
+type BaseResource struct {
+	Meta   Meta   `json:"meta"`
+	Status Status `json:"status,omitempty"`
+	root   *ResourceContents
+	left   *dc.DataCenterType
+	right  *compute.ServerType
+	mid    *network.VLANPoolType
+	// then use each of these as subtrees.
+}
+
+
+func getRes(n *BaseResource, key string) *node {
+	var (
+		p *node
+		i int
+	)
+	for i = 0; i < len(key) && n != nil; {
+		c := key[i]
+		p = n
+		if c < n.c {
+			n = n.left
+		} else if c > n.c {
+			n = n.right
+		} else {
+			n = n.mid
+			i++
+		}
+	}
+	if i == len(key) {
+		return p
+	}
+	return n
+}
+*/
+
 // Resource interface is implemented by all resources and provides resource
 // validation and label selection methods.
 type Resource interface {
