@@ -12,6 +12,85 @@ var ErrAddressEmpty = errors.New("address is empty")
 
 var ErrRowEmpty = errors.New("row is empty")
 
+// Suggested containment model
+
+/*
+
+This is how we can provide containment:
+
+type DCContents struct {
+	DC    DCCenter `json:"center"`
+	Labs  DCLab    `json:"lab"`
+	Rack  DCRack   `json:"rack"`
+	Shelf DCShelf  `json:"shelf"`
+	Port  int      `json:"port"`
+}
+
+type DCCenter struct {
+	DC    Datacenter `json:"datacenter"`
+	Labs  DCLab      `json:"dclab"`
+	Rack  DCRack     `json:"dcrack"`
+	Shelf DCShelf    `json:"dcshelf"`
+	Port  int        `json:"dcport"`
+}
+
+type DCLab struct {
+	Labs   Lab     `json:"lab"`
+	Racks  DCRack  `json:"dcrack"`
+	Shelfs DCShelf `json:"dcshelf"`
+	Port   int     `json:"port"`
+}
+
+type DCShelf struct {
+	Racks DCRack `json:"dcrack"`
+	Port  int    `json:"port"`
+}
+
+type DCRack struct {
+	Racks Rack   `json:"dcrack"`
+	Port  string `json:"owner"`
+}
+
+// add the DCContents struct to each dc resource
+*/
+
+// OLD Suggestions
+/*
+type DCContents struct {
+	DC    Center  `json:"center"`
+	Lab   DCLab   `json:"lab"`
+	Rack  DCRack  `json:"rack"`
+	Shelf DCShelf `json:"shelf"`
+	Port  int     `json:"port"`
+}
+*/
+/*
+type Center struct {
+	Lab   DCLab   `json:"lab"`
+	Rack  DCRack  `json:"rack"`
+	Shelf DCShelf `json:"shelf"`
+	Port  int     `json:"port"`
+}
+*/
+/*
+type DCLab struct {
+	Rack  DCRack  `json:"rack"`
+	Shelf DCShelf `json:"shelf"`
+	Port  int     `json:"port"`
+}
+
+type DCShelf struct {
+	Rack DCRack `json:"rack"`
+	Port int    `json:"port"`
+}
+
+type DCRack struct {
+	Port string `json:"owner"`
+}
+
+// add the DCContents struct to each dc resource
+*/
+
 // Function that returns a zabra type of name datacenter and dc category.
 func DataCenterType() zebra.Type {
 	return zebra.Type{
