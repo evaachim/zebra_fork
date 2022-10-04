@@ -23,21 +23,58 @@ var ErrServerIDEmtpy = errors.New("server id is empty")
 
 // Suggested containment model
 /*
-type ComputeContents struct {
-	ServerContents  ComputeServer `json:"server"`
-	ESXContents     ESX           `json:"esx"`
-	VMContents      VM            `json:"vm"`
-	VCenterContents VCenter       `json:"vc"`
+
+type ComputeContnets struct {
+	CS              ServerContents  `json:"server"`
+	ESXServer       ESXContents     `json:"esx"`
+	VMContents      VMContents      `json:"vm"`
+	VCenterContents VCenterContents `json:"vc"`
 }
 
-type ComputeServer struct {
+///
+// type ComputeContents struct {
+	// ServerContents  ComputeServer `json:"server"`
+	// ESXContents     ESXServer          `json:"esx"`
+	// VMContents      VMServer           `json:"vm"`
+	// VCenterContents VCenterServer      `json:"vc"`
+// }
+
+type ServerContents struct {
 	CS              Server  `json:"server"`
-	ESXServer       ESX     `json:"esx"`
-	VMContents      VM      `json:"vm"`
-	VCenterContents VCenter `json:"vc"`
+	// ESXServer       ESXContents     `json:"esx"`
+	// VMContents      VMContents      `json:"vm"`
+	// VCenterContents VCenterContents `json:"vc"`
 }
 
-// add the DCContents struct to each dc resource
+type ESXContents struct {
+	ESXServer       ESX   `json:"esx"`
+}
+
+type VMContents struct {
+	VMServer       VM   `json:"esx"`
+}
+
+type VCenterContents struct {
+	VCenterServer       VCenter   `json:"esx"`
+}
+
+
+type Server struct {
+	zebra.BaseResource
+	Credentials  zebra.Credentials `json:"credentials"`
+	SerialNumber string            `json:"serialNumber"`
+	BoardIP      net.IP            `json:"boardIp"`
+	Model        string            `json:"model"`
+	ESXContained	ESX          `json:"esx"`
+	VMContained	VM         `json:"vm"`
+	VCenterContained	VCenter        `json:"vcenter"`
+
+
+}
+
+
+
+// add the ontents struct to each dc resource
 */
 
 // Function that returns a zabra type of name server and compute category.
