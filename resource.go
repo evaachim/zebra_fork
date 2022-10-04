@@ -21,10 +21,88 @@ type BaseResource struct {
 	Meta   Meta   `json:"meta"`
 	Status Status `json:"status,omitempty"`
 	root   *ResourceContents
-	left   *dc.DataCenterType
-	right  *compute.ServerType
-	mid    *network.VLANPoolType
+	left   *dc.Datacenter
+	right  *compute.Server
+	mid    *network.Switch
 	// then use each of these as subtrees.
+}
+
+// subtrees for the left child tree of BaseResource (i.e. Datacenter) example of how to (re)structure
+type Datacenter struct {
+	zebra.BaseResource
+	Address string `json:"address"`
+	root   *BaseResource
+	left   *dc.Lab
+}
+
+type Lab struct{
+	zebra.BaseResource
+	root   *Datacenter
+	left   *dc.Rack
+}
+
+// subtrees for the mid child tree of BaseResource (i.e. Switch) example of how to (re)structure
+type Switch struct {
+	zebra.BaseResource
+	Credentials  zebra.Credentials `json:"credentials"`
+	ManagementIP net.IP            `json:"managementIp"`
+	SerialNumber string            `json:"serialNumber"`
+	Model        string            `json:"model"`
+	NumPorts     uint32            `json:"numPorts"`
+	root   *BaseResource
+	left   *compute.VLANPool
+	right *compute.IPAddressPool
+}
+
+type VLANPool struct {
+	zebra.BaseResource
+	RangeStart uint16 `json:"rangeStart"`
+	RangeEnd   uint16 `json:"rangeEnd"`
+	root   *Switch
+}
+
+type IPAddressPool struct {
+	zebra.BaseResource
+	Subnets []net.IPNet `json:"subnets"`
+	root   *Switch
+}
+
+// subtrees for the mid child tree of BaseResource (i.e. Server) example of how to (re)structure
+//
+type Server struct {
+	zebra.BaseResource
+	Credentials  zebra.Credentials `json:"credentials"`
+	SerialNumber string            `json:"serialNumber"`
+	BoardIP      net.IP            `json:"boardIp"`
+	Model        string            `json:"model"`
+	root   *ResourceContents
+	left   *compute.ESX
+	right  *compute.VCenter
+	mid    *network.VM
+}
+
+type ESX struct {
+	zebra.BaseResource
+	Credentials zebra.Credentials `json:"credentials"`
+	ServerID    string            `json:"serverId"`
+	IP          net.IP            `json:"ip"`
+	root   *Server
+}
+
+type VCenter struct {
+	zebra.BaseResource
+	Credentials zebra.Credentials `json:"credentials"`
+	IP          net.IP            `json:"ip"`
+	root   *Server
+}
+
+type VM struct {
+	zebra.BaseResource
+	Credentials  zebra.Credentials `json:"credentials"`
+	ESXID        string            `json:"esxId"`
+	ManagementIP net.IP            `json:"managementIp"`
+	VCenterID    string            `json:"vCenterId"`
+	root   *Server
 }
 
 
