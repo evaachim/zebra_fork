@@ -64,7 +64,7 @@ type Datacenter struct {
 	zebra.BaseResource
 	Address string `json:"address"`
 	// contents of datacenter.
-	Labs Lab `json:"lab"`
+	Labs *Lab `json:"lab"`
 }
 
 // Create new dc resources.
@@ -112,7 +112,7 @@ func EmptyLab() zebra.Resource {
 type Lab struct {
 	zebra.BaseResource
 	// lab contents.
-	Racks Rack `json:"dcrack"`
+	Racks *Rack `json:"dcrack"`
 }
 
 // Create new dc resources.

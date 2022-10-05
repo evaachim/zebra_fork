@@ -21,62 +21,6 @@ var ErrVCenterEmpty = errors.New("VCenter id is empty")
 
 var ErrServerIDEmtpy = errors.New("server id is empty")
 
-// Suggested containment model
-/*
-
-type ComputeContnets struct {
-	CS              ServerContents  `json:"server"`
-	ESXServer       ESXContents     `json:"esx"`
-	VMContents      VMContents      `json:"vm"`
-	VCenterContents VCenterContents `json:"vc"`
-}
-
-///
-// type ComputeContents struct {
-	// ServerContents  ComputeServer `json:"server"`
-	// ESXContents     ESXServer          `json:"esx"`
-	// VMContents      VMServer           `json:"vm"`
-	// VCenterContents VCenterServer      `json:"vc"`
-// }
-
-type ServerContents struct {
-	CS              Server  `json:"server"`
-	// ESXServer       ESXContents     `json:"esx"`
-	// VMContents      VMContents      `json:"vm"`
-	// VCenterContents VCenterContents `json:"vc"`
-}
-
-type ESXContents struct {
-	ESXServer       ESX   `json:"esx"`
-}
-
-type VMContents struct {
-	VMServer       VM   `json:"esx"`
-}
-
-type VCenterContents struct {
-	VCenterServer       VCenter   `json:"esx"`
-}
-
-
-type Server struct {
-	zebra.BaseResource
-	Credentials  zebra.Credentials `json:"credentials"`
-	SerialNumber string            `json:"serialNumber"`
-	BoardIP      net.IP            `json:"boardIp"`
-	Model        string            `json:"model"`
-	ESXContained	ESX          `json:"esx"`
-	VMContained	VM         `json:"vm"`
-	VCenterContained	VCenter        `json:"vcenter"`
-
-
-}
-
-
-
-// add the ontents struct to each dc resource
-*/
-
 // Function that returns a zabra type of name server and compute category.
 func ServerType() zebra.Type {
 	return zebra.Type{
@@ -101,9 +45,9 @@ type Server struct {
 	BoardIP      net.IP            `json:"boardIp"`
 	Model        string            `json:"model"`
 	// contents of server.
-	ESXServers     ESX     `json:"esx"`
-	VMServers      VM      `json:"vm"`
-	VCenterServers VCenter `json:"vcenter"`
+	ESXServers     *ESX     `json:"esx"`
+	VMServers      *VM      `json:"vm"`
+	VCenterServers *VCenter `json:"vcenter"`
 }
 
 // Function that creates a new resource of type server.
