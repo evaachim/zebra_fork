@@ -42,6 +42,9 @@ type Switch struct {
 	SerialNumber string            `json:"serialNumber"`
 	Model        string            `json:"model"`
 	NumPorts     uint32            `json:"numPorts"`
+	// switch contents.
+	Vlans VLANPool      `json:"vlan"`
+	IPs   IPAddressPool `json:"IPAddressPool"`
 }
 
 // Validate returns an error if the given Switch object has incorrect values.

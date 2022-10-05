@@ -100,6 +100,10 @@ type Server struct {
 	SerialNumber string            `json:"serialNumber"`
 	BoardIP      net.IP            `json:"boardIp"`
 	Model        string            `json:"model"`
+	// contents of server.
+	ESXServers     ESX     `json:"esx"`
+	VMServers      VM      `json:"vm"`
+	VCenterServers VCenter `json:"vcenter"`
 }
 
 // Function that creates a new resource of type server.

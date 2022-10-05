@@ -32,7 +32,7 @@ type DCCenter struct {
 }
 
 type DCLab struct {
-//	Racks  DCRack  `json:"dcrack"`
+	Racks  DCRack  `json:"dcrack"`
 //	Shelfs DCShelf `json:"dcshelf"`
 }
 
@@ -63,6 +63,8 @@ func EmptyDataCenter() zebra.Resource {
 type Datacenter struct {
 	zebra.BaseResource
 	Address string `json:"address"`
+	// contents of datacenter.
+	Labs Lab `json:"lab"`
 }
 
 // Create new dc resources.
@@ -107,7 +109,11 @@ func EmptyLab() zebra.Resource {
 }
 
 // A Lab represents the lab consisting of a name and an ID.
-type Lab struct{ zebra.BaseResource }
+type Lab struct {
+	zebra.BaseResource
+	// lab contents.
+	Racks Rack `json:"dcrack"`
+}
 
 // Create new dc resources.
 // Function that creates a new resource of type lab.
