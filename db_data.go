@@ -71,6 +71,7 @@ func GetRack() (Racktables, error) {
 	rackType := rt.Type
 
 	// Return the data retreived from the db to use in the zebra tool.
+	// To be used to get data from db into tool.
 	return Racktables{
 		ID:   id,
 		IP:   ip,
