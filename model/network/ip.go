@@ -55,6 +55,8 @@ func (p *IPAddressPool) Validate(ctx context.Context) error {
 	return p.BaseResource.Validate(ctx)
 }
 
+// Why are we not using the other data that a switch can have?
+//
 func NewIPAddressPool(name, owner, group string) *IPAddressPool {
 	r := zebra.NewBaseResource(IPAddressPoolType(), name, owner, group)
 

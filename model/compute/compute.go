@@ -96,6 +96,8 @@ type ESX struct {
 	IP          net.IP            `json:"ip"`
 }
 
+// Why are we only adding the server ID and not the other info also?
+//
 func NewESX(serverID, name, owner, group string) *ESX {
 	return &ESX{
 		BaseResource: *zebra.NewBaseResource(ESXType(), name, owner, group),

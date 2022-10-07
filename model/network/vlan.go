@@ -50,6 +50,8 @@ func (v *VLANPool) String() string {
 	return fmt.Sprintf("%d-%d", v.RangeStart, v.RangeEnd)
 }
 
+// Why are we not using the other data that a switch can have?
+//
 func NewVLANPool(name, owner, group string) *VLANPool {
 	r := zebra.NewBaseResource(VLANPoolType(), name, owner, group)
 

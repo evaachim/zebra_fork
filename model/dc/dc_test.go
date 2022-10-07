@@ -64,6 +64,9 @@ func TestRack(t *testing.T) {
 	r.Meta.Type.Name = name
 	assert.Equal(zebra.ErrWrongType, r.Validate(ctx))
 
-	r = dc.NewRack("test_row", "test_rack", "test_owner", "test_group")
+	// r = dc.NewRack("test_row", "test_row_id", "test_rack", "test_problem",
+	// "test_comments", "test_location", "test_owner", "test_group", testAsset)
+
+	r = dc.NewRack("test_row", "test_row_id", "test_rack", "test_location", "test_owner", "test_group")
 	assert.Nil(r.Validate(ctx))
 }
