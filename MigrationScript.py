@@ -47,6 +47,7 @@ def getQuery():
     criteriaLabel = queryResponse.json()["label"]
 
     key = " "
+
     if len(criteriaID) != 0:
         key = criteriaID
     elif len(criteriaType) !=0:
@@ -75,8 +76,9 @@ cursor = connection.cursor()
 ## Get all data for datacenter resources.
 ## Key must be the one the user passes in when the query is made. 
 ## The key comes form getQuery currently, but the format can change if necesary.
+## Call this in the datacener area.
 def get_db_resource_data(key):
-    dbName, row, location = ""
+    dcName, row, location = ""
 
     try:
         statement = "SELECT name, row_name, row_id, location_name FROM rackobject WHERE id=%s"
@@ -85,24 +87,29 @@ def get_db_resource_data(key):
         cursor.execute(statement, data)
         for (name, row_name, row_id, location_name) in cursor:
             print("Retreived the data")
-            dbName = name
+            
+            dcName = name
             row = row_name
             rowID = row_id
             location = location_name
+
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (dbName, row, rowID, location)
+    return (dcName, row, rowID, location)
 
 ## Get data for network resources.
 ## get_net_resource_data() should go here.
+## Should call this in the network area.
 
 
+## function goes here and returns a tuple.
 
 ## Get data for compute resources.
 ## get_compute_resource_data() should go here.
+## Should call this in the compute area.
 ## We don't have all of this data in the db, but it should be something like this:
 def get_compute_resource_data(key):
-    dbName, row, location, resType = ""
+    srvName, row, location, resType = ""
     try:
         ## rackobject is currently the only table containing such info, but it is not complete for our server needs.
         ## the db does not have complete data for various server types.
@@ -113,13 +120,14 @@ def get_compute_resource_data(key):
         for (name, serial, model, ip, location_name) in cursor:
             print("Retreived the data")
             srvName = name
+            ## We don't have these in a server table.
           ## row = row_name
           ##  rowID = row_id
             location = location_name
             resType = determineType(name)
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (srvName, serial, model, ip, location_name)
+    return (srvName, serial, model, ip, location, resType)
 
 ## Determine the subtype, that is, the final type of the resource; 
     # for example, a type can be a server and the final type can be esx.
@@ -200,6 +208,6 @@ def determineType(name):
     ## What category should we place BRIDGE in ? Should it be vlan?
 
     ## Also, where do we classify centos?   
-    
+
     ## Return the type and use it in the get functions.
     return type

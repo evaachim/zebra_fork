@@ -144,3 +144,5 @@ func initStore(rootDir string) *store.FileStore {
 
 	return fs
 }
+
+// add resources from the db migration somewhere here.
