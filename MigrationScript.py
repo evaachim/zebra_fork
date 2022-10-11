@@ -15,6 +15,11 @@ import mysql
 import sys 
 import pyodbc
 
+from collections import namedtuple
+
+## Struct that will be used to get/access data.
+zebraData = namedtuple('Resource', ['specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'resType', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
+
 ## The local user to connect to the database.
 username = os.environ.get("username")
 password = os.environ.get("password")
@@ -73,6 +78,7 @@ cursor = connection.cursor()
 
 ## Get data from database.
 
+'''
 ## Get all data for datacenter resources.
 ## Key must be the one the user passes in when the query is made. 
 ## The key comes form getQuery currently, but the format can change if necesary.
@@ -150,6 +156,7 @@ def get_resource_data(key):
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
     return (srvName, serial, model, ip, location, resType)
+'''
 
 ## Get the type by id.
 ## pdu and ups can be considered as vm solutions so they're both added to vm.
@@ -249,8 +256,8 @@ def determineType(means, name):
     '''
 
 def getData():
-    specificID, resName, theLabel, assets, problems, notes, resType, rackID = ""
-    rowID, rowName, rackLocation = ""
+    ## specificID, resName, theLabel, assets, problems, notes, resType = ""
+    ## owner, rackID, rowID, rowName, rackLocation = ""
     ip = "N/A"
     ## portName = "N/A"
     portID = 0
@@ -265,38 +272,42 @@ def getData():
             print("Retreived the data")
 
             # resource specific data.
-            specificID  = id
+            zebraData.specificID  = id
             resName = name
 
             # currently null for all, will be usefoul for containment model.
-            theLabel = label
+            zebraData.theLabel = label
 
             # additional information.
-            assets = asset_no
-            problems = has_problems
-            notes = comment
+            zebraData.assets = asset_no
+            zebraData.problems = has_problems
+            zebraData.notes = comment
 
             # the resource type.
-            resType = determineIDMeaning(specificID, resName)
+            zebraData.resType = determineIDMeaning(zebraData.specificID, resName)
 
-            rackID = getRackDetails(specificID)
+            zebraData.rackID = getRackDetails(zebraData.specificID)
 
-            rowID, rowName, rackLocation = getRowDetails(rackID)
+            zebraData.rowID, zebraData.rowName, zebraData.rackLocation = getRowDetails(zebraData.rackID)
             
 
-            if resType == "Server" or resType == "ESX" or resType == "vm" or resType == "VCenter" or resType == "Switch":
+            if zebraData.resType == "Server" or zebraData.resType == "ESX" or zebraData.resType == "vm" or zebraData.resType == "VCenter" or zebraData.resType == "Switch":
                 # get the IP data for all of the above.
-                ip = getIPDetaiLs(specificID)
+                zebraData.ip = getIPDetaiLs(zebraData.specificID)
+
+                # all resources with ip need to have their owner's info extracted.
+                zebraData.owner = getUserDetails(zebraData.ip)
 
                 # switches also have ports, get that data for them.
-                if resType == "Switch":
+                if zebraData.resType == "Switch":
                     ## portName = getPortDetails(specificID)
-                    portID = getPortDetails(specificID)
+                   zebraData. portID = getPortDetails(zebraData.specificID)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
 
-    return (specificID, resName, theLabel, assets, problems, notes, resType, ip, portID, rowID, rowName, rackLocation)
+    # return (specificID, resName, theLabel, assets, problems, notes, resType, ip, owner, portID, rowID, rowName, rackLocation)
+    return zebraData
 
 ## Some resources have IP details, get those from the right table, given an object_id.
 def getIPDetaiLs(object_id):
@@ -311,10 +322,11 @@ def getIPDetaiLs(object_id):
         for ip in cursor:
             print("Retreived the data")
             ipData = ip
+            yield (ipData)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (ipData)
+    
 
 ## Some resources have port details, get those from the right table, given an object_id.
 ## What do we do with resources that have multiple ports? We only support one port resources and
@@ -335,11 +347,13 @@ def getPortDetails(object_id):
             print("Retreived the data")
             portID = id            
             ## portData = name
+            yield (portID)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (portID)
+    
 
+## details about each rack, depending on the object's id, will be used in further queries.
 def getRackDetails(object_id):
     rackID = ""
     try:
@@ -351,10 +365,11 @@ def getRackDetails(object_id):
         for rack_id in cursor:
             print("Retreived the data")
             rackID = rack_id
+            yield (rackID)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (rackID)
+    r
 
 ## get details such as 
     # rowID, rowName, location for each rack and row.
@@ -371,7 +386,24 @@ def getRowDetails(id):
             rowID = row_id
             rowName = row_name
             rackLocation = location_name
+            yield (rowID, rowName, rackLocation)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (rowID, rowName, rackLocation)
+
+## for user or owner: IPv4Log .
+def getUserDetails(resIP):
+    ownedBy = ""
+    try:
+        statement = "SELECT user FROM IPv4Log WHERE ip=%s"
+
+        data = (resIP,)
+        cursor.execute(statement, data)
+
+        for (user) in cursor:
+            print("Retreived the data")
+            ownedBy = user
+            yield (ownedBy)
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
