@@ -211,3 +211,94 @@ def determineType(name):
 
     ## Return the type and use it in the get functions.
     return type
+
+
+    ## Get data by ID from dictionary.
+
+def get_resource_data(key):
+    srvName, row, location, resType = ""
+    try:
+        statement = "SELECT name, serial, model, ip, location_name FROM rackobject WHERE id=%s"
+
+        data = (key,)
+        cursor.execute(statement, data)
+
+        for (name, serial, model, ip, location_name) in cursor:
+            print("Retreived the data")
+            srvName = name
+            ## We don't have these in a server table.
+          ## row = row_name
+          ##  rowID = row_id
+            location = location_name
+            resType = determineType(name)
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+    return (srvName, serial, model, ip, location, resType)
+
+## Get the type by id.
+## pdu and ups can be considered as vm solutions so they're both added to vm.
+## some are randomly dropped into 1504 but this objid has no reference. Thus, name will be used too.
+def determineIDMeaning(id, name):
+    means, this = ""
+    if id == "2" or id == "12":
+        means = "VM"
+    elif id == "3":
+        means = "Shelf"
+    elif id == "4":
+        means = "Server"
+    elif id == "8":
+        means = "Switch"
+    elif id == "1504":
+        means = "Compute"
+    elif id == "1503":
+        means = "Other"
+    else: means = "/"
+
+    this = means
+
+    return this
+
+def determineType(means, name):
+    name = name.lower()
+
+    ## still need something for vapic and vpod, as well as FRODO,  APPLIANCE-HOME1, CAPIC, aci, DMASHAL-VINTELLA.
+    type = ""
+    if means == "Shelf":
+        type = "Rack"
+    elif means == "Compute":
+        if "esx" in name:
+            type = "ESX"
+        elif "vm" in name:
+            type = "vm"
+        elif "jenkins" in name or "server" in name or "srv" in name:
+            type = "Server"
+        elif "bld" in name:
+            type = "Datacenter"
+        elif "dmz" in name or "vlan" in name:
+            type = "VLAN"
+        elif "vleaf" in name or "switch" in name or "sw" in name:
+            type = "Switch"
+        elif "vm" in name:
+            type = "vm"
+    elif means == "Other":
+        if "chasis" in name or "ixia" in name:
+            type = "Rack"
+        elif "nexus" in name or "switch" in name or "sw" in name or "n3k" in name:
+            type = "Switch"
+    return type
+
+
+    '''
+    1 => array ('chapter_id' => 1, 'dict_value' => 'BlackBox'),
+	2 => array ('chapter_id' => 1, 'dict_value' => 'PDU'),   *
+	3 => array ('chapter_id' => 1, 'dict_value' => 'Shelf'), *
+	4 => array ('chapter_id' => 1, 'dict_value' => 'Server'), *
+	5 => array ('chapter_id' => 1, 'dict_value' => 'DiskArray'),
+	6 => array ('chapter_id' => 1, 'dict_value' => 'TapeLibrary'),
+	7 => array ('chapter_id' => 1, 'dict_value' => 'Router'),
+	8 => array ('chapter_id' => 1, 'dict_value' => 'Network switch'), *
+	9 => array ('chapter_id' => 1, 'dict_value' => 'PatchPanel'),
+	10 => array ('chapter_id' => 1, 'dict_value' => 'CableOrganizer'),
+	11 => array ('chapter_id' => 1, 'dict_value' => 'spacer'),
+	12 => array ('chapter_id' => 1, 'dict_value' => 'UPS'), *
+    '''
