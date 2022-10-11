@@ -249,9 +249,12 @@ def determineType(means, name):
     '''
 
 def getData():
-    specificID, resName, theLabel, assets, problems, notes, resType = ""
+    specificID, resName, theLabel, assets, problems, notes, resType, rackID = ""
+    rowID, rowName, rackLocation = ""
     ip = "N/A"
-    port = "N/A"
+    ## portName = "N/A"
+    portID = 0
+    
     try:
         statement = "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject%s"
 
@@ -274,7 +277,12 @@ def getData():
             notes = comment
 
             # the resource type.
-            resType = determineIDMeaning(objtype_id, name)
+            resType = determineIDMeaning(specificID, resName)
+
+            rackID = getRackDetails(specificID)
+
+            rowID, rowName, rackLocation = getRowDetails(rackID)
+            
 
             if resType == "Server" or resType == "ESX" or resType == "vm" or resType == "VCenter" or resType == "Switch":
                 # get the IP data for all of the above.
@@ -282,12 +290,13 @@ def getData():
 
                 # switches also have ports, get that data for them.
                 if resType == "Switch":
-                    port = getPortDetails(specificID)
+                    ## portName = getPortDetails(specificID)
+                    portID = getPortDetails(specificID)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
 
-    return (specificID, resName, theLabel, assets, problems, notes, resType, ip)
+    return (specificID, resName, theLabel, assets, problems, notes, resType, ip, portID, rowID, rowName, rackLocation)
 
 ## Some resources have IP details, get those from the right table, given an object_id.
 def getIPDetaiLs(object_id):
@@ -308,19 +317,61 @@ def getIPDetaiLs(object_id):
     return (ipData)
 
 ## Some resources have port details, get those from the right table, given an object_id.
+## What do we do with resources that have multiple ports? We only support one port resources and
+    # they need to be int. Do we change the structure of the existing code?  
+    # currently using port_id because it has more "connections" throughout the data base.
 def getPortDetails(object_id):
-    portData = ""
+    ## portData = ""
+    portID = 0
 
     try:
-        statement = "SELECT name FROM Port WHERE object_id=%s"
+        ## statement = "SELECT id, name FROM Port WHERE object_id=%s"
+        statement = "SELECT id FROM Port WHERE object_id=%s"
 
         data = (object_id,)
         cursor.execute(statement, data)
 
-        for name in cursor:
+        for (id) in cursor:
             print("Retreived the data")
-            portData = name
+            portID = id            
+            ## portData = name
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    return (portData)
+    return (portID)
+
+def getRackDetails(object_id):
+    rackID = ""
+    try:
+        statement = "SELECT rack_id  FROM rackspace WHERE object_id=%s"
+
+        data = (object_id,)
+        cursor.execute(statement, data)
+
+        for rack_id in cursor:
+            print("Retreived the data")
+            rackID = rack_id
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+    return (rackID)
+
+## get details such as 
+    # rowID, rowName, location for each rack and row.
+def getRowDetails(id):
+    rowID, rowName, rackLocation = ""
+    try:
+        statement = "SELECT row_id, row_name, location_name FROM Rack WHERE id=%s"
+
+        data = (id,)
+        cursor.execute(statement, data)
+
+        for (row_id, row_name, location_name) in cursor:
+            print("Retreived the data")
+            rowID = row_id
+            rowName = row_name
+            rackLocation = location_name
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+    return (rowID, rowName, rackLocation)
