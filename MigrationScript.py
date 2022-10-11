@@ -129,90 +129,6 @@ def get_compute_resource_data(key):
         print(f"Error retreiving entry from database: {e}")
     return (srvName, serial, model, ip, location, resType)
 
-## Determine the subtype, that is, the final type of the resource; 
-    # for example, a type can be a server and the final type can be esx.
-def detSubType(name):
-        if "ESX" in name or "VSHIELD" in name:
-            ## Consider VSHIELD as esx sice it regulates traffic into the esx.
-            type = "ESXServer"
-
-        ## consider TRUNK as a vlan type
-        elif "TRUNK" in name or "VLAN" in name:
-            if "SPINE" in name or "LEAF" in name:
-                type = "Switch"
-            elif "IPC" in name:
-                type = "IPAddressPool"
-
-        elif "N3K" in name or "FEX" in name:
-            # N3K specialises in IP Address Management, Active Directory & Cloud Management and Privileged Access Management & Security, 
-                # allowing it to provide comprehensive support to IT organisations in these areas
-            # FEX is a companion to a Nexus 5000 or Nexus 7000 switch
-            type = "Switch"
-        
-        elif "ASA" in name or "BRIDGE" in name:
-            ## Cisco ASA is a security device that combines firewall, antivirus, intrusion prevention, 
-                # and virtual private network (VPN) capabilities
-
-            ## Could we possibly consider BRIDGE as VLAN since it connects network segments?
-            type = "VLAN"
-        
-        elif "LAB" in name:
-            type = "Lab"
-        
-        elif "VCENTER" in name or "VC" in name:
-            type = "VCenter"
-        
-        elif "JENKINS" in name or "Server" in name:
-            type = "Server"
-    
-def determineType(name):
-    type = ""
-    prefix = name[0:4]
-
-    ### Deal with prefixes first
-    if "SW" in prefix:
-        type = "switch"
-        type = detSubType(name)
-        
-    ## elif "SWVM" in name:
-      ##  type = "vm"
-    ### so on.
-
-    elif "VM" in prefix or "-VM" in prefix:
-        type = "VM"
-        type = detSubType(name)
-
-    elif "APPL" in prefix:
-        ## consider applience to be a server.
-        type = "Server"
-        type = detSubType(name)
-    
-    elif "BRIDG" in prefix:
-        type = "VLAN"
-        
-
-    else: type =  detSubType(name)
-    
-    ## need some for sdk, cake, dev, vpod, 
-    ## also for aci and noiro --> Cisco uses them for data centers.
-    ## apic goes with sdn and is classified as a controller, is used for dcs, 
-        #  and is in relation with switches.
-
-    ## k8b is for managing a cluster of machines - could we place it under the vm category?
-
-    ## What do we classify HV as ? - It's a network but we don't have a network struct, 
-        # we do, however, have a network category.
-    
-    ## What category do we place WINDRIVER  in.
-
-    ## What category should we place BRIDGE in ? Should it be vlan?
-
-    ## Also, where do we classify centos?   
-
-    ## Return the type and use it in the get functions.
-    return type
-
-
     ## Get data by ID from dictionary.
 
 def get_resource_data(key):
@@ -237,9 +153,9 @@ def get_resource_data(key):
 
 ## Get the type by id.
 ## pdu and ups can be considered as vm solutions so they're both added to vm.
-## some are randomly dropped into 1504 but this objid has no reference. Thus, name will be used too.
+## some are randomly dropped into 1504 but this objtype_id has no reference. Thus, name will be used too.
 def determineIDMeaning(id, name):
-    means, this = ""
+    means, final, this = ""
     if id == "2" or id == "12":
         means = "VM"
     elif id == "3":
@@ -254,15 +170,35 @@ def determineIDMeaning(id, name):
         means = "Other"
     else: means = "/"
 
-    this = means
+    final = determineType(means, name)
+
+    if final == "/":
+        final = "unclassified"
+
+    this = final
 
     return this
 
 def determineType(means, name):
     name = name.lower()
-
-    ## still need something for vapic and vpod, as well as FRODO,  APPLIANCE-HOME1, CAPIC, aci, DMASHAL-VINTELLA.
     type = ""
+
+    ### still need something for vapic* and vpod*, as well as FRODO*,  APPLIANCE-HOME1, CAPIC*, 
+        # aci-github.cisco.com*, DMASHAL-VINTELLA*.
+        # RESOLVED AS EXPLAINED BELOW:
+    ### vpod uses VMware ESXi hosts, VMware vCenter, storage, networking and a Windows Console VM. 
+            # => vcenter.
+    ### vAPIC virtual machines use VMware vCenter ==> vcenter
+        # Cisco ACI vCenter plug-in.
+        # BUT also uses Cisco ACI Virtual Edge VM.
+    ### Cisco Cloud APIC on Microsoft Azure is deployed and runs as an 
+        # Microsoft Azure Virtual Machine => capic => VM.
+    ### Frodo is enabled by default on VMs powered on after AOS 5.5.X => frodo => VM.
+        # About frodo - VMware Technology Network VMTN
+    ### Vintela -> VAS is Vintela's flagship product in a line that includes Vintela Management 
+        # eXtensions (VMX), which extends Microsoft Systems Management Server => server.
+    ### apic uses controllers and so does cisco aci but it is similar to switches => switch.
+    
     if means == "Shelf":
         type = "Rack"
     elif means == "Compute":
@@ -270,25 +206,34 @@ def determineType(means, name):
             type = "ESX"
         elif "vm" in name:
             type = "vm"
-        elif "jenkins" in name or "server" in name or "srv" in name:
+        elif "jenkins" in name or "server" in name or "srv" in name or "vintella" in name:
             type = "Server"
-        elif "bld" in name:
+        elif "bld" in name or "datacenter" in name:
             type = "Datacenter"
-        elif "dmz" in name or "vlan" in name:
+        elif "dmz" in name or "vlan" in name or "asa" in name or "bridge" in name:
             type = "VLAN"
-        elif "vleaf" in name or "switch" in name or "sw" in name:
+        elif "vleaf" in name or "switch" in name or "sw" in name or "aci" in name:
             type = "Switch"
-        elif "vm" in name:
+        elif "vm" in name or "capic" in name or "frodo" in name:
             type = "vm"
+        elif "vapic" in name or "vpod" in name:
+            type = "VCenter"
+        elif "IPC" in name:
+            type = "IPAddressPool"
     elif means == "Other":
         if "chasis" in name or "ixia" in name:
             type = "Rack"
         elif "nexus" in name or "switch" in name or "sw" in name or "n3k" in name:
             type = "Switch"
+    else: type = means
+
     return type
 
 
     '''
+    Reference model:
+    * means applicable to zebra's current system.
+
     1 => array ('chapter_id' => 1, 'dict_value' => 'BlackBox'),
 	2 => array ('chapter_id' => 1, 'dict_value' => 'PDU'),   *
 	3 => array ('chapter_id' => 1, 'dict_value' => 'Shelf'), *
@@ -302,3 +247,80 @@ def determineType(means, name):
 	11 => array ('chapter_id' => 1, 'dict_value' => 'spacer'),
 	12 => array ('chapter_id' => 1, 'dict_value' => 'UPS'), *
     '''
+
+def getData():
+    specificID, resName, theLabel, assets, problems, notes, resType = ""
+    ip = "N/A"
+    port = "N/A"
+    try:
+        statement = "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject%s"
+
+        ## data = (key,)
+        cursor.execute(statement)
+
+        for (id, name, label, objtype_id, asset_no, has_problems, comment) in cursor:
+            print("Retreived the data")
+
+            # resource specific data.
+            specificID  = id
+            resName = name
+
+            # currently null for all, will be usefoul for containment model.
+            theLabel = label
+
+            # additional information.
+            assets = asset_no
+            problems = has_problems
+            notes = comment
+
+            # the resource type.
+            resType = determineIDMeaning(objtype_id, name)
+
+            if resType == "Server" or resType == "ESX" or resType == "vm" or resType == "VCenter" or resType == "Switch":
+                # get the IP data for all of the above.
+                ip = getIPDetaiLs(specificID)
+
+                # switches also have ports, get that data for them.
+                if resType == "Switch":
+                    port = getPortDetails(specificID)
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+
+    return (specificID, resName, theLabel, assets, problems, notes, resType, ip)
+
+## Some resources have IP details, get those from the right table, given an object_id.
+def getIPDetaiLs(object_id):
+    ipData = ""
+
+    try:
+        statement = "SELECT ip FROM IPv4Allocation WHERE object_id=%s"
+
+        data = (object_id,)
+        cursor.execute(statement, data)
+
+        for ip in cursor:
+            print("Retreived the data")
+            ipData = ip
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+    return (ipData)
+
+## Some resources have port details, get those from the right table, given an object_id.
+def getPortDetails(object_id):
+    portData = ""
+
+    try:
+        statement = "SELECT name FROM Port WHERE object_id=%s"
+
+        data = (object_id,)
+        cursor.execute(statement, data)
+
+        for name in cursor:
+            print("Retreived the data")
+            portData = name
+
+    except database.Error as e:
+        print(f"Error retreiving entry from database: {e}")
+    return (portData)
