@@ -7,6 +7,7 @@
 
 ## imports needed for access to mysql and the racktables database.
 import os
+from pickletools import uint8
 import re
 import mysql.connector as database
 
@@ -20,7 +21,7 @@ from collections import namedtuple
 ## Struct that will be used to get/access data.
 zebraData = namedtuple('Resource', ['resType','specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
 
-## List with all of the data.
+## List with all of the data structs i.e all resources.
 zebraList = []
 
 ## The local user to connect to the database.
@@ -28,33 +29,13 @@ zebraList = []
 username = os.environ.get("username")
 password = os.environ.get("password")
 
+## Option to only import by api query (not using this method currently)=> too costly
 ## API routes.
 types = "/api/v1/types"
 labels = "/api/v1/labels"
 query = "/api/v1/resources"
 posts = "/api/v1/resources"
 delete = "/api/v1/resources"
-
-def getQuery():
-    queryResponse = requests.get(query)
-    ## This contains the id to look for when querring.
-    ## Querry can be of different types - by id, by type, by label. These are in api.go.
-    criteriaID = queryResponse.json()["id"]
-    criteriaType = queryResponse.json()["type"]
-    criteriaLabel = queryResponse.json()["label"]
-
-    key = " "
-
-    if len(criteriaID) != 0:
-        key = criteriaID
-    elif len(criteriaType) !=0:
-        key = criteriaType
-    elif len(criteriaLabel) != 0:
-        key = criteriaLabel
-    else: key = ""
-
-    ## Return and use.
-    return key
 
 ## Make the connection to the correct data base.
 connection = database.connect(
@@ -66,6 +47,51 @@ connection = database.connect(
 
 ## This is where the database cursor goes.
 cursor = connection.cursor()
+
+'''
+## Option to only import by api query => too costly
+def getQType():
+    key, kind = getQuery()
+    query = ""
+
+    if kind == "id":
+        query = "ID"
+    elif kind == "type":
+        query = "type"
+    elif kind == "label":
+        query = "label"
+    else: query = ""
+
+    return query
+'''
+
+'''
+## Option to only import by api query pert 2 => too costly
+def getQuery():
+    queryResponse = requests.get(query)
+    ## This contains the id to look for when querring.
+    ## Querry can be of different types - by id, by type, by label. These are in api.go.
+    criteriaID = queryResponse.json()["id"]
+    criteriaType = queryResponse.json()["type"]
+    criteriaLabel = queryResponse.json()["label"]
+
+    key, kind = " "
+
+    if len(criteriaID) != 0:
+        key = criteriaID
+        kind = "id"
+    elif len(criteriaType) !=0:
+        key = criteriaType
+        kind = "type"
+    elif len(criteriaLabel) != 0:
+        key = criteriaLabel
+        kind = "label"
+    else: 
+        key = ""
+        kind = ""
+    ## Return and use.
+    return key, kind
+'''
 
 ## Get the type by id.
 ## pdu and ups can be considered as vm solutions so they're both added to vm.
@@ -131,7 +157,7 @@ def determineType(means, name):
             type = "ESX"
         elif "jenkins" in name or "server" in name or "srv" in name or "vintella" in name:
             type = "Server"
-        elif "bld" in name or "datacenter" in name:
+        elif "bld" in name or "datacenter" in name or "dc" in name:
             type = "Datacenter"
         elif "dmz" in name or "vlan" in name or "asa" in name or "bridge" in name:
             type = "VLAN"
@@ -144,13 +170,33 @@ def determineType(means, name):
         elif "IPC" in name:
             type = "IPAddressPool"
     elif means == "Other":
-        if "chasis" in name or "ixia" in name:
+        if "chasis" in name or "ixia" in name or "rack" in name:
             type = "Rack"
         elif "nexus" in name or "switch" in name or "sw" in name or "n3k" in name:
             type = "Switch"
     else: type = means
 
     return type
+
+'''
+## Option to only import by api query pert 3 => too costly
+## This would not work because there are several id's that mean the same thing and also several types that go into the same typeID category 
+    # It'd be too costly to calculate the distinction.
+
+def convertTypeToTypeID(kind):
+    theTypeID = -1
+
+    if kind == "Shelf":
+        theTypeID = 30
+    elif kind ==  "Rack":
+        theTypeID = 3
+    elif kind == "jenkins" or kind == "server" or  kind == "srv" or kind == "vintella":
+        theTypeID = 4
+    elif kind == "esx":
+        theTypeID = 1504
+
+    return theTypeID
+'''
 
 ## Get data from database.
 def getData():
@@ -159,8 +205,10 @@ def getData():
     IP = "N/A"
     port_ID = 0
     
+    queryWOkey = "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject%s"
+
     try:
-        statement = "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject%s"
+        statement = queryWOkey
 
         ## data = (key,)
         cursor.execute(statement)
@@ -185,9 +233,9 @@ def getData():
             zebraData.notes = comment
 
             rack_ID = getRackDetails(id)
-
             # the resource's rack information.
             zebraData.rackID = rack_ID
+
             # further details about the rack and row.
             row_ID, row_Name, rack_Location = getRowDetails(rack_ID)
             zebraData.rowID = row_ID 
@@ -208,8 +256,8 @@ def getData():
                     port_ID = getPortDetails(id)
                     zebraData.portID = port_ID
 
-        ## add this struct to the list, there might be many.
-        zebraList.append(zebraData)
+            ## add this struct to the list, there might be many.
+            zebraList.append(zebraData)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
@@ -222,7 +270,7 @@ def getIPDetaiLs(object_id):
     ipData = ""
 
     try:
-        statement = "SELECT ip FROM IPv4Allocation WHERE object_id=%s"
+        statement = "SELECT ip FROM IPv4Allocation WHERE object_id =%s"
 
         data = (object_id,)
         cursor.execute(statement, data)
@@ -230,11 +278,12 @@ def getIPDetaiLs(object_id):
         for ip in cursor:
             print("Retreived the data")
             ipData = ip
-            yield (ipData)
+            ## yield (ipData)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    
+
+    return ipData 
 
 ## Some resources have port details, get those from the right table, given an object_id.
 ## What do we do with resources that have multiple ports? We only support one port resources and
@@ -243,6 +292,8 @@ def getIPDetaiLs(object_id):
 def getPortDetails(object_id):
     ## portData = ""
     portID = 0
+    portList = []
+    numPorts = 0
 
     try:
         ## statement = "SELECT id, name FROM Port WHERE object_id=%s"
@@ -255,17 +306,25 @@ def getPortDetails(object_id):
             print("Retreived the data")
             portID = id            
             ## portData = name
-            yield (portID)
+            ## yield (portID)
+            portList.append(portID)
+
+        ## Instead of returning the actual port numbers, return how many ports this switch has.
+            # Needed for our current implementation of zebra.
+        numPorts = len(portList)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
     
+    return numPorts
 
 ## details about each rack, depending on the object's id, will be used in further queries.
 def getRackDetails(object_id):
-    rackID = ""
+    RackID = ""
+    # rackList = []
+
     try:
-        statement = "SELECT rack_id  FROM rackspace WHERE object_id=%s"
+        statement = "SELECT rack_id  FROM rackspace WHERE object_id =%s"
 
         data = (object_id,)
         cursor.execute(statement, data)
@@ -273,17 +332,28 @@ def getRackDetails(object_id):
         for rack_id in cursor:
             print("Retreived the data")
             rackID = rack_id
-            yield (rackID)
+            # rackList.append(rackID)
+
+        '''
+        ## Removed to simplify 
+            # Not necesary since although object_ids may repeat, they will be on the same rack
+                # since representing the same resource.
+        if(len(set(rackList)) !=1):
+            rackID = rackID
+            print("Error")
+        '''
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
+
+    return rackID
 
 ## get details such as 
     # rowID, rowName, location for each rack and row.
 def getRowDetails(id):
     rowID, rowName, rackLocation = ""
     try:
-        statement = "SELECT row_id, row_name, location_name FROM Rack WHERE id=%s"
+        statement = "SELECT row_id, row_name, location_name FROM Rack WHERE id =%s"
 
         data = (id,)
         cursor.execute(statement, data)
@@ -293,10 +363,19 @@ def getRowDetails(id):
             rowID = row_id
             rowName = row_name
             rackLocation = location_name
-            yield (rowID, rowName, rackLocation)
+            ## yield (rowID, rowName, rackLocation)
+
+            if rowID == "":
+                rowID = "N/A"
+            elif rowName == "":
+                rowName = "N/A"
+            elif rackLocation == "":
+                rackLocation = "N/A"
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
+    
+    return (rowID, rowName, rackLocation)
 
 ## for user or owner: IPv4Log .
 ## get user owner / user data.
@@ -311,7 +390,9 @@ def getUserDetails(resIP):
         for (user) in cursor:
             print("Retreived the data")
             ownedBy = user
-            yield (ownedBy)
+            ## yield (ownedBy)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
+    
+    return (ownedBy)
