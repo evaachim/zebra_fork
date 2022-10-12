@@ -2,7 +2,7 @@
 ##
 ## This could be extended for any type of resource for which there is data in the racktables database.
 
-## Are we updating the zebra tool to have this data statically and then access it via the api calls? 
+## Are we updating the zebra tool to have this data statically and then access it via the api calls? => V.
 ## Or we using the api calls to fetch from the db only that data which we need for the specific call?
 
 ## imports needed for access to mysql and the racktables database.
@@ -18,9 +18,13 @@ import pyodbc
 from collections import namedtuple
 
 ## Struct that will be used to get/access data.
-zebraData = namedtuple('Resource', ['specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'resType', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
+zebraData = namedtuple('Resource', ['resType','specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'resType', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
+
+## List with all of the data.
+zebraList = []
 
 ## The local user to connect to the database.
+## Must set these up as local variables to use as below.
 username = os.environ.get("username")
 password = os.environ.get("password")
 
@@ -30,18 +34,6 @@ labels = "/api/v1/labels"
 query = "/api/v1/resources"
 posts = "/api/v1/resources"
 delete = "/api/v1/resources"
-
-'''
-## To be used if second implementation option is selected 
-
-## get the response for the query.
-queryResponse = requests.get(query)
-
-## Make the response into json format.
-criteria = queryResponse.json()
-
-print(criteria)
-'''
 
 def getQuery():
     queryResponse = requests.get(query)
@@ -64,8 +56,7 @@ def getQuery():
     ## Return and use.
     return key
 
-
-## Make the connection to the data base.
+## Make the connection to the correct data base.
 connection = database.connect(
     user = username,
     password = password,
@@ -76,100 +67,24 @@ connection = database.connect(
 ## This is where the database cursor goes.
 cursor = connection.cursor()
 
-## Get data from database.
-
-'''
-## Get all data for datacenter resources.
-## Key must be the one the user passes in when the query is made. 
-## The key comes form getQuery currently, but the format can change if necesary.
-## Call this in the datacener area.
-def get_db_resource_data(key):
-    dcName, row, location = ""
-
-    try:
-        statement = "SELECT name, row_name, row_id, location_name FROM rackobject WHERE id=%s"
-        ## selection is now by the object's id, it could be something else, as needed.
-        data = (key,)
-        cursor.execute(statement, data)
-        for (name, row_name, row_id, location_name) in cursor:
-            print("Retreived the data")
-            
-            dcName = name
-            row = row_name
-            rowID = row_id
-            location = location_name
-
-    except database.Error as e:
-        print(f"Error retreiving entry from database: {e}")
-    return (dcName, row, rowID, location)
-
-## Get data for network resources.
-## get_net_resource_data() should go here.
-## Should call this in the network area.
-
-
-## function goes here and returns a tuple.
-
-## Get data for compute resources.
-## get_compute_resource_data() should go here.
-## Should call this in the compute area.
-## We don't have all of this data in the db, but it should be something like this:
-def get_compute_resource_data(key):
-    srvName, row, location, resType = ""
-    try:
-        ## rackobject is currently the only table containing such info, but it is not complete for our server needs.
-        ## the db does not have complete data for various server types.
-        statement = "SELECT name, serial, model, ip, location_name FROM <<some table name>> WHERE id=%s"
-        ## selection is now by the object's id, it could be something else, as needed.
-        data = (key,)
-        cursor.execute(statement, data)
-        for (name, serial, model, ip, location_name) in cursor:
-            print("Retreived the data")
-            srvName = name
-            ## We don't have these in a server table.
-          ## row = row_name
-          ##  rowID = row_id
-            location = location_name
-            resType = determineType(name)
-    except database.Error as e:
-        print(f"Error retreiving entry from database: {e}")
-    return (srvName, serial, model, ip, location, resType)
-
-    ## Get data by ID from dictionary.
-
-def get_resource_data(key):
-    srvName, row, location, resType = ""
-    try:
-        statement = "SELECT name, serial, model, ip, location_name FROM rackobject WHERE id=%s"
-
-        data = (key,)
-        cursor.execute(statement, data)
-
-        for (name, serial, model, ip, location_name) in cursor:
-            print("Retreived the data")
-            srvName = name
-            ## We don't have these in a server table.
-          ## row = row_name
-          ##  rowID = row_id
-            location = location_name
-            resType = determineType(name)
-    except database.Error as e:
-        print(f"Error retreiving entry from database: {e}")
-    return (srvName, serial, model, ip, location, resType)
-'''
-
 ## Get the type by id.
 ## pdu and ups can be considered as vm solutions so they're both added to vm.
 ## some are randomly dropped into 1504 but this objtype_id has no reference. Thus, name will be used too.
 def determineIDMeaning(id, name):
     means, final, this = ""
-    if id == "2" or id == "12":
+    id = str(id)
+    
+    if id == "2" or id == "27":
         means = "VM"
+    elif id == "30" or id == "31" or id == "34":
+        means = "Rack"
     elif id == "3":
         means = "Shelf"
-    elif id == "4":
+    elif id == "38":
+        means = "VCenter"
+    elif id == "4" or id == "13" or id == "36":
         means = "Server"
-    elif id == "8":
+    elif id == "8" or id == "12" or id == "14" or id == "21" or id == "26" or id == "32" or id == "33":
         means = "Switch"
     elif id == "1504":
         means = "Compute"
@@ -186,6 +101,7 @@ def determineIDMeaning(id, name):
 
     return this
 
+## determine the specific type of a resource.
 def determineType(means, name):
     name = name.lower()
     type = ""
@@ -205,14 +121,14 @@ def determineType(means, name):
     ### Vintela -> VAS is Vintela's flagship product in a line that includes Vintela Management 
         # eXtensions (VMX), which extends Microsoft Systems Management Server => server.
     ### apic uses controllers and so does cisco aci but it is similar to switches => switch.
+
+    ## vcenter is a management interface type => management interface type = vcenter
     
     if means == "Shelf":
         type = "Rack"
     elif means == "Compute":
         if "esx" in name:
             type = "ESX"
-        elif "vm" in name:
-            type = "vm"
         elif "jenkins" in name or "server" in name or "srv" in name or "vintella" in name:
             type = "Server"
         elif "bld" in name or "datacenter" in name:
@@ -236,7 +152,6 @@ def determineType(means, name):
 
     return type
 
-
     '''
     Reference model:
     * means applicable to zebra's current system.
@@ -253,14 +168,45 @@ def determineType(means, name):
 	10 => array ('chapter_id' => 1, 'dict_value' => 'CableOrganizer'),
 	11 => array ('chapter_id' => 1, 'dict_value' => 'spacer'),
 	12 => array ('chapter_id' => 1, 'dict_value' => 'UPS'), *
+
+    // Also:
+
+     1 | yes    | ObjectType                   |
+|   11 | no     | server models                |
+|   12 | no     | network switch models        | *
+|   13 | no     | server OS type               | **
+|   14 | no     | switch OS type               | * 
+|   16 | no     | router OS type               |
+|   17 | no     | router models                |
+|   18 | no     | disk array models            |
+|   19 | no     | tape library models          |
+|   21 | no     | KVM switch models            | * 
+|   23 | no     | console models               |
+|   24 | no     | network security models      |
+|   25 | no     | wireless models              |
+|   26 | no     | fibre channel switch models  | * 
+|   27 | no     | PDU models                   | ***
+|   28 | no     | Voice/video hardware         |
+|   29 | no     | Yes/No                       |
+|   30 | no     | network chassis models       | ****
+|   31 | no     | server chassis models        | ****
+|   32 | no     | virtual switch models        | *
+|   33 | no     | virtual switch OS type       | *
+|   34 | no     | power supply chassis models  | ****
+|   35 | no     | power supply models          |
+|   36 | no     | serial console server models | **
+|   37 | no     | wireless OS type             |
+|   38 | no     | management interface type    | *****
+| 9999 | no     | multiplexer models       
+
     '''
 
+## Get data from database.
 def getData():
-    ## specificID, resName, theLabel, assets, problems, notes, resType = ""
-    ## owner, rackID, rowID, rowName, rackLocation = ""
-    ip = "N/A"
-    ## portName = "N/A"
-    portID = 0
+    ## variables to store info temporarily.
+    type, rack_ID, port_ID, owned_by, row_ID, row_Name, rack_Location = ""
+    IP = "N/A"
+    port_ID = 0
     
     try:
         statement = "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject%s"
@@ -271,10 +217,14 @@ def getData():
         for (id, name, label, objtype_id, asset_no, has_problems, comment) in cursor:
             print("Retreived the data")
 
+            # get the resource's type based on its data.
+            type = determineIDMeaning(id, name) 
+            zebraData.resType = type
+
             # resource specific data.
             zebraData.specificID  = id
-            resName = name
-
+            zebraData.resName = name
+            
             # currently null for all, will be usefoul for containment model.
             zebraData.theLabel = label
 
@@ -284,30 +234,40 @@ def getData():
             zebraData.notes = comment
 
             # the resource type.
-            zebraData.resType = determineIDMeaning(zebraData.specificID, resName)
+            zebraData.resType = determineIDMeaning(objtype_id, name)
 
-            zebraData.rackID = getRackDetails(zebraData.specificID)
+            rack_ID = getRackDetails(objtype_id)
 
-            zebraData.rowID, zebraData.rowName, zebraData.rackLocation = getRowDetails(zebraData.rackID)
+            # the resource's rack information.
+            zebraData.rackID = rack_ID
+            # further details about the rack and row.
+            row_ID, row_Name, rack_Location = getRowDetails(rack_ID)
+            zebraData.rowID = row_ID 
+            zebraData.rowName = row_Name 
+            zebraData.rackLocation = rack_Location
             
-
             if zebraData.resType == "Server" or zebraData.resType == "ESX" or zebraData.resType == "vm" or zebraData.resType == "VCenter" or zebraData.resType == "Switch":
                 # get the IP data for all of the above.
-                zebraData.ip = getIPDetaiLs(zebraData.specificID)
+                IP = getIPDetaiLs(id)
+                zebraData.ip = IP
 
                 # all resources with ip need to have their owner's info extracted.
-                zebraData.owner = getUserDetails(zebraData.ip)
+                owned_by = getUserDetails(IP)
+                zebraData.owner = owned_by
 
                 # switches also have ports, get that data for them.
                 if zebraData.resType == "Switch":
-                    ## portName = getPortDetails(specificID)
-                   zebraData. portID = getPortDetails(zebraData.specificID)
+                    port_ID = getPortDetails(id)
+                    zebraData.portID = port_ID
+
+        ## add this struct to the list, there might be many.
+        zebraList.append(zebraData)
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
 
     # return (specificID, resName, theLabel, assets, problems, notes, resType, ip, owner, portID, rowID, rowName, rackLocation)
-    return zebraData
+    return zebraList
 
 ## Some resources have IP details, get those from the right table, given an object_id.
 def getIPDetaiLs(object_id):
@@ -369,7 +329,6 @@ def getRackDetails(object_id):
 
     except database.Error as e:
         print(f"Error retreiving entry from database: {e}")
-    r
 
 ## get details such as 
     # rowID, rowName, location for each rack and row.
@@ -392,6 +351,7 @@ def getRowDetails(id):
         print(f"Error retreiving entry from database: {e}")
 
 ## for user or owner: IPv4Log .
+## get user owner / user data.
 def getUserDetails(resIP):
     ownedBy = ""
     try:
