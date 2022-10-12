@@ -18,7 +18,7 @@ import pyodbc
 from collections import namedtuple
 
 ## Struct that will be used to get/access data.
-zebraData = namedtuple('Resource', ['resType','specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'resType', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
+zebraData = namedtuple('Resource', ['resType','specificID', 'resName', 'theLabel', 'assets', 'problems', 'notes', 'ip', 'owner', 'portID', 'rowID', 'rowName', 'rackID', 'rackLocation'])
 
 ## List with all of the data.
 zebraList = []
@@ -73,7 +73,7 @@ cursor = connection.cursor()
 def determineIDMeaning(id, name):
     means, final, this = ""
     id = str(id)
-    
+
     if id == "2" or id == "27":
         means = "VM"
     elif id == "30" or id == "31" or id == "34":
@@ -152,55 +152,6 @@ def determineType(means, name):
 
     return type
 
-    '''
-    Reference model:
-    * means applicable to zebra's current system.
-
-    1 => array ('chapter_id' => 1, 'dict_value' => 'BlackBox'),
-	2 => array ('chapter_id' => 1, 'dict_value' => 'PDU'),   *
-	3 => array ('chapter_id' => 1, 'dict_value' => 'Shelf'), *
-	4 => array ('chapter_id' => 1, 'dict_value' => 'Server'), *
-	5 => array ('chapter_id' => 1, 'dict_value' => 'DiskArray'),
-	6 => array ('chapter_id' => 1, 'dict_value' => 'TapeLibrary'),
-	7 => array ('chapter_id' => 1, 'dict_value' => 'Router'),
-	8 => array ('chapter_id' => 1, 'dict_value' => 'Network switch'), *
-	9 => array ('chapter_id' => 1, 'dict_value' => 'PatchPanel'),
-	10 => array ('chapter_id' => 1, 'dict_value' => 'CableOrganizer'),
-	11 => array ('chapter_id' => 1, 'dict_value' => 'spacer'),
-	12 => array ('chapter_id' => 1, 'dict_value' => 'UPS'), *
-
-    // Also:
-
-     1 | yes    | ObjectType                   |
-|   11 | no     | server models                |
-|   12 | no     | network switch models        | *
-|   13 | no     | server OS type               | **
-|   14 | no     | switch OS type               | * 
-|   16 | no     | router OS type               |
-|   17 | no     | router models                |
-|   18 | no     | disk array models            |
-|   19 | no     | tape library models          |
-|   21 | no     | KVM switch models            | * 
-|   23 | no     | console models               |
-|   24 | no     | network security models      |
-|   25 | no     | wireless models              |
-|   26 | no     | fibre channel switch models  | * 
-|   27 | no     | PDU models                   | ***
-|   28 | no     | Voice/video hardware         |
-|   29 | no     | Yes/No                       |
-|   30 | no     | network chassis models       | ****
-|   31 | no     | server chassis models        | ****
-|   32 | no     | virtual switch models        | *
-|   33 | no     | virtual switch OS type       | *
-|   34 | no     | power supply chassis models  | ****
-|   35 | no     | power supply models          |
-|   36 | no     | serial console server models | **
-|   37 | no     | wireless OS type             |
-|   38 | no     | management interface type    | *****
-| 9999 | no     | multiplexer models       
-
-    '''
-
 ## Get data from database.
 def getData():
     ## variables to store info temporarily.
@@ -218,7 +169,7 @@ def getData():
             print("Retreived the data")
 
             # get the resource's type based on its data.
-            type = determineIDMeaning(id, name) 
+            type = determineIDMeaning(objtype_id, name) 
             zebraData.resType = type
 
             # resource specific data.
@@ -233,10 +184,7 @@ def getData():
             zebraData.problems = has_problems
             zebraData.notes = comment
 
-            # the resource type.
-            zebraData.resType = determineIDMeaning(objtype_id, name)
-
-            rack_ID = getRackDetails(objtype_id)
+            rack_ID = getRackDetails(id)
 
             # the resource's rack information.
             zebraData.rackID = rack_ID
