@@ -1,34 +1,44 @@
 // Migration Script for data - it can be used to fetch,
 // add, and use the data inside zebra.
-// This is the Golang version of the same python script.
 package main
 
 import (
+	"bytes"
+	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"strconv"
 	"strings"
 
-	"github.com/julienschmidt/httprouter" //nolint:gci
+	//nolint:gci
+
+	"github.com/go-logr/logr"
+
+	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
+	"github.com/project-safari/zebra/model"
 	"github.com/project-safari/zebra/model/compute"
 	"github.com/project-safari/zebra/model/dc"
 	"github.com/project-safari/zebra/model/network"
 
-	"github.com/go-logr/logr"
+	// this is needed for mysql access.
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// var ErrInvalidImport = errors.New("the import of data from the data base failed")
+var ErrEmptyBody = errors.New("empty request body, cannot proceed")
 
 // Racktables struct is the struct that contains info from the racktables table in the mysql db.
 //
 // It contains the id, ip, name, and type of the item in the racktable.
 type Racktables struct {
-	//  id, name, label, objtype_id, asset_no, has_problems, comment
-	ID   string `json:"object_id"` //nolint:tagliatelle
-	Name string `json:"name"`
-	// Type TheType `json:"type"`
+	ID        string `json:"object_id"` //nolint:tagliatelle
+	Name      string `json:"name"`
 	Label     string `json:"label"`
 	ObjtypeID string `json:"objtypeId"`
 	AssetNo   string `json:"assetNo"`
@@ -44,14 +54,32 @@ type Racktables struct {
 	Location  string `json:"locationName"`
 }
 
+type ResourceAPI struct {
+	factory zebra.ResourceFactory
+	Store   zebra.Store
+}
+
+type CtxKey string
+
+const (
+	ResourcesCtxKey = CtxKey("resources")
+)
+
+func NewResourceAPI(factory zebra.ResourceFactory) *ResourceAPI {
+	return &ResourceAPI{
+		factory: factory,
+		Store:   nil,
+	}
+}
+
 // Determine the specific type of a resource.
-//nolint
+// nolint
 func determineType(means string, resName string) string {
 	name := strings.ToLower(resName)
 	typ := ""
 
 	if means == "Shelf" {
-		typ = "Rack"
+		typ = "dc.rack"
 	} else if means == "Compute" {
 		if strings.Contains(name, "esx") {
 			typ = "compute.esx"
@@ -83,28 +111,8 @@ func determineType(means string, resName string) string {
 	return typ
 }
 
-/*
-   ### still need something for vapic* and vpod*, as well as FRODO*,  APPLIANCE-HOME1, CAPIC*,
-       # aci-github.cisco.com*, DMASHAL-VINTELLA*.
-       # RESOLVED AS EXPLAINED BELOW:
-   ### vpod uses VMware ESXi hosts, VMware vCenter, storage, networking and a Windows Console VM.
-           # => vcenter.
-   ### vAPIC virtual machines use VMware vCenter ==> vcenter
-       # Cisco ACI vCenter plug-in.
-       # BUT also uses Cisco ACI Virtual Edge VM.
-   ### Cisco Cloud APIC on Microsoft Azure is deployed and runs as an
-       # Microsoft Azure Virtual Machine => capic => VM.
-   ### Frodo is enabled by default on VMs powered on after AOS 5.5.X => frodo => VM.
-       # About frodo - VMware Technology Network VMTN
-   ### Vintela -> VAS is Vintela's flagship product in a line that includes Vintela Management
-       # eXtensions (VMX), which extends Microsoft Systems Management Server => server.
-   ### apic uses controllers and so does cisco aci but it is similar to switches => switch.
-
-   ## vcenter is a management interface type => management interface type = vcenter
-*/
-
 // Get resource type by id.
-//nolint
+// nolint
 func determineIDMeaning(id string, name string) string {
 	means := ""
 	final := ""
@@ -112,9 +120,7 @@ func determineIDMeaning(id string, name string) string {
 
 	if id == "2" || id == "27" {
 		means = "compute.vm"
-	} else if id == "30" || id == "31" || id == "34" {
-		means = "dc.rack"
-	} else if id == "3" {
+	} else if id == "30" || id == "31" || id == "34" || id == "3" {
 		means = "dc.rack"
 	} else if id == "38" {
 		means = "compute.vcenter"
@@ -141,15 +147,8 @@ func determineIDMeaning(id string, name string) string {
 	return this
 }
 
-// The getRack function gets data from the data base.
-//
-// It prepares the necessary data from the data base to be used in the zebra tool.
-//
-// getRack takes in a Type struct and returns an error or nil in the absence thereof.
-//
-// It executes the function newMeta with the data it extracted from the db.
 //nolint:funlen
-func getData() ([]Racktables, error) {
+func main() {
 	var rt Racktables
 
 	RackArr := []Racktables{}
@@ -201,13 +200,16 @@ func getData() ([]Racktables, error) {
 			rt.Port = portID
 		}
 
-		rowName, rowID, rowLocation := getRowDetails(rt.ID)
+		rackID := getRackDetails(rt.ID)
+		rowName, rowID, rowLocation := getRowDetails(rackID)
+
 		rt.RowName = rowName
 		rt.RowID = rowID
 		rt.Location = rowLocation
 
 		assetNumber := rt.AssetNo
 		rt.AssetNo = assetNumber
+
 		probs := rt.Problems
 		rt.Problems = probs
 
@@ -225,7 +227,130 @@ func getData() ([]Racktables, error) {
 		fmt.Println(err.Error())
 	}
 
-	return RackArr, err
+	allData(RackArr)
+}
+
+func allData(rackArr []Racktables) {
+	factory := zebra.Factory()
+
+	myAPI := NewResourceAPI(factory)
+
+	h := processPost()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h(w, r, nil)
+	})
+
+	for i := 0; i < (len(rackArr)); i++ {
+		res := rackArr[i]
+
+		_, eachRes := createResFromData(res)
+
+		// Create new resource on zebra with post request.
+		req := createRequest("POST", "/resources", eachRes, myAPI)
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+	}
+}
+
+func createRequest(method string, url string,
+	body string, api *ResourceAPI,
+) *http.Request {
+	ctx := context.WithValue(context.Background(), ResourcesCtxKey, api)
+	req, _ := http.NewRequestWithContext(ctx, method, url, nil)
+
+	if body != "" {
+		req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
+		print("Added   ", body, "  successfully!\n")
+	}
+
+	return req
+}
+
+func readJSONdata(ctx context.Context, req *http.Request, data interface{}) error {
+	log := logr.FromContextOrDiscard(ctx)
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Info("request", "body", string(body))
+
+	if len(body) > 0 {
+		err = json.Unmarshal(body, data)
+	} else {
+		err = ErrEmptyBody
+	}
+
+	return err
+}
+
+func addAndPost(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
+	for _, l := range resMap.Resources {
+		for _, r := range l.Resources {
+			if err := f(r); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateRes(ctx context.Context, resMap *zebra.ResourceMap) error {
+	// Check all resources to make sure they are valid
+	for _, l := range resMap.Resources {
+		for _, r := range l.Resources {
+			if err := r.Validate(ctx); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func processPost() httprouter.Handle {
+	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		ctx := req.Context()
+		log := logr.FromContextOrDiscard(ctx)
+		api, ok := ctx.Value(ResourcesCtxKey).(*ResourceAPI)
+
+		if !ok {
+			res.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resMap := zebra.NewResourceMap(model.Factory())
+
+		// Read request, return error if applicable
+		if err := readJSONdata(ctx, req, resMap); err != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			log.Info("resources could not be created, could not read request")
+
+			return
+		}
+
+		if validateRes(ctx, resMap) != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			log.Info("resources could not be created, found invalid resource(s)")
+
+			return
+		}
+
+		// Add all resources to store
+		if addAndPost(resMap, api.Store.Create) != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			log.Info("internal server error while creating resources")
+
+			return
+		}
+
+		log.Info("successfully created resources")
+
+		res.WriteHeader(http.StatusOK)
+	}
 }
 
 // Get IPs from db based on type id.
@@ -248,6 +373,7 @@ func getIPDetaiLs(objectID string) string {
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
+
 	defer results.Close()
 
 	for results.Next() {
@@ -282,16 +408,16 @@ func getPortDetails(objectID string) int {
 	// Execute the query
 	results, err := db.Query(statement, objectID)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
+
 	defer results.Close()
 
 	for results.Next() {
-		// for each row, scan the result into our tag composite object
 		err = results.Scan(&rt.Port)
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
 
 		numPort++
@@ -304,7 +430,54 @@ func getPortDetails(objectID string) int {
 func getMoreDetails(objectID string) (string, string, string, string, string, string, string) {
 	var rt Racktables
 
+	var label sql.NullString
+
+	var assetNo sql.NullString
+
+	var comment sql.NullString
+
 	statement := "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject WHERE id = ?"
+	// to be filled in with appropriate user, password, and db name.
+	db, err := sql.Open("mysql", "eachim:1234@/racktables")
+
+	if err != nil {
+		log.Print(err.Error())
+	}
+
+	defer db.Close()
+
+	// Execute the query
+	results, err := db.Query(statement, objectID)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer results.Close()
+
+	for results.Next() {
+		err = results.Scan(&rt.ID, &rt.Name, &label, &rt.ObjtypeID, &assetNo, &rt.Problems, &comment)
+
+		rt.Label = label.String
+
+		rt.AssetNo = assetNo.String
+
+		rt.Comments = comment.String
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		log.Print(rt.RackID)
+	}
+
+	return rt.ID, rt.Name, rt.Label, rt.ObjtypeID, rt.AssetNo, rt.Problems, rt.Comments
+}
+
+func getRackDetails(objID string) string {
+	var rt Racktables
+
+	statement := "SELECT rack_id FROM RackSpace WHERE object_id = ?"
 	// to be filled in with appropriate user, password, and db name.
 	db, err := sql.Open("mysql", "eachim:1234@/racktables")
 	// if there is an error opening the connection, handle it
@@ -315,24 +488,23 @@ func getMoreDetails(objectID string) (string, string, string, string, string, st
 	defer db.Close()
 
 	// Execute the query
-	results, err := db.Query(statement, objectID)
+	results, err := db.Query(statement, objID)
+
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
+
 	defer results.Close()
 
 	for results.Next() {
-		// for each row, scan the result into our tag composite object, GIVEN THE ID.
-		err = results.Scan(&rt.ID, &rt.Name, &rt.Label, &rt.ObjtypeID, &rt.AssetNo, &rt.Problems, &rt.Comments)
+		err = results.Scan(&rt.RackID)
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
-
-		log.Print(rt.RackID)
 	}
 
-	return rt.ID, rt.Name, rt.Label, rt.ObjtypeID, rt.AssetNo, rt.Problems, rt.Comments
+	return rt.RackID
 }
 
 // Get row and location details based on rack info (rack ID).
@@ -353,16 +525,15 @@ func getRowDetails(id string) (string, string, string) {
 	// Execute the query
 	results, err := db.Query(statement, id)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 	defer results.Close()
 
 	for results.Next() {
-		// for each row, scan the result into our tag composite object
 		err = results.Scan(&rt.RowID, &rt.RowName, &rt.Location)
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
 	}
 
@@ -387,16 +558,16 @@ func getUserDetails(resIP string) string {
 	// Execute the query
 	results, err := db.Query(statement, resIP)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
+
 	defer results.Close()
 
 	for results.Next() {
-		// for each row, scan the result into our tag composite object
 		err = results.Scan(&rt.Owner)
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
 	}
 
@@ -405,136 +576,85 @@ func getUserDetails(resIP string) string {
 
 // Function to create a resource given data obtained from db, guven a certain type.
 //
-// Returns a zebra.Resource.
-//nolint:cyclop
-func createResFromData(res Racktables) zebra.Resource {
+// Returns a zebra.Resource and a string version of the resource struct to be used with APIs.
+//
+//nolint:cyclop, funlen, lll
+func createResFromData(res Racktables) (zebra.Resource, string) {
 	// dbResources, err := GetData()
 	// var resType = ""
 	resType := res.Type
 
 	switch resType {
 	case "dc.datacenetr":
-		return dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
+		addR := dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
+		print("Added dc " + res.Name + "\n")
+		this := `{"datacenter":[{"id":` + res.ID + `,"type:"` + resType + `,"name:"` + res.Name + `,owner:` + res.Owner + "}]}"
+
+		return addR, this
 
 	case "dc.lab":
-		return dc.NewLab(res.Name, res.Owner, "system.group-datacenter-lab")
+		addR := dc.NewLab(res.Name, res.Owner, "system.group-datacenter-lab")
+		print("Added lab " + res.Name + "\n")
+		this := `{"lab":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+
+		return addR, this
 
 	case "dc.rack", "dc.shelf":
-		return dc.NewRack(res.RowName, res.RowID, res.Name, res.Location, res.Owner, "system.group-datacenter-lab-rack")
+		addR := dc.NewRack(res.RowName, res.RowID, res.Name, res.Location, res.Owner, "system.group-datacenter-lab-rack")
+		print("Added rack " + res.Name + "\n")
+		this := `{"rack":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"Row":` + res.RowName + `,"RowID":` + res.RowID + `,"Asset":` + res.AssetNo + `,"RowID":` + res.RowID + `,"Problems":` + res.Problems + `,"Location":` + res.Location + "}]}"
+
+		return addR, this
 
 	case "compute.server":
-		return compute.NewServer("serial", "model", res.Name, res.Owner, "system.group-server")
+		addR := compute.NewServer("serial", "model", res.Name, res.Owner, "system.group-server")
+		print("Added server " + res.Name + "\n")
+		this := `{"server":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"boardIP":` + res.IP + "}]}"
+
+		return addR, this
 
 	case "compute.esx":
-		return compute.NewESX(res.ID, res.Name, res.Owner, "system.group-server-esx")
+		addR := compute.NewESX(res.ID, res.Name, res.Owner, "system.group-server-esx")
+		print("Added esx " + res.Name + "\n")
+		this := `{"esx":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+
+		return addR, this
 
 	case "compute.vm":
-		return compute.NewVM("esx??", res.Name, res.Owner, "system.group-server-vcenter-vm")
+		addR := compute.NewVM("esx??", res.Name, res.Owner, "system.group-server-vcenter-vm")
+		print("Added esx" + res.Name + "\n")
+		this := `{"vm":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+
+		return addR, this
 
 	case "compute.vcenetr":
-		return compute.NewVCenter(res.Name, res.Owner, "system.group-server-vcenter")
+		addR := compute.NewVCenter(res.Name, res.Owner, "system.group-server-vcenter")
+		print("Added vc " + res.Name + "\n")
+		this := `{"vcenter":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+
+		return addR, this
 
 	case "network.switch":
-		return network.NewSwitch(res.Name, res.Owner, "system.group-vlan-switch")
+		addR := network.NewSwitch(res.Name, res.Owner, "system.group-vlan-switch")
+		print("Added sw " + res.Name + "\n")
+		this := `{"switch":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"managementIp":` + res.IP + `,"numPorts":` + strconv.Itoa(res.Port) + "}]}"
+
+		return addR, this
 
 	case "network.ipaddresspool":
-		return network.NewIPAddressPool(res.Name, res.Owner, "system.group-vlan-ipaddrpool")
+		addR := network.NewIPAddressPool(res.Name, res.Owner, "system.group-vlan-ipaddrpool")
+		print("Added IPpool" + res.Name + "\n")
+		this := `{"IPAddressPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+
+		return addR, this
 
 	case "network.vlanpool":
-		return network.NewVLANPool(res.Name, res.ObjtypeID, "system.group-vlan")
+		addR := network.NewVLANPool(res.Name, res.ObjtypeID, "system.group-vlan")
+		print("Added vlan" + res.Name + "\n")
+		this := `{"VLANPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+
+		return addR, this
 	}
 
-	return nil
-}
-
-/*
-// Validate all resources in a resource map.
-func validateResources(ctx context.Context, resMap *zebra.ResourceMap) error {
-	// Check all resources to make sure they are valid
-	for _, l := range resMap.Resources {
-		for _, r := range l.Resources {
-			if err := r.Validate(ctx); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func readJSON(ctx context.Context, req *http.Request, data interface{}) error {
-	log := logr.FromContextOrDiscard(ctx)
-
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-
-	log.Info("request", "body", string(body))
-
-	if len(body) > 0 {
-		err = json.Unmarshal(body, data)
-	} else {
-		err = ErrEmptyBody
-	}
-
-	return err
-}
-*/
-
-func postToZebra() httprouter.Handle {
-	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		ctx := req.Context()
-		log := logr.FromContextOrDiscard(ctx)
-		api, ok := ctx.Value(ResourcesCtxKey).(*ResourceAPI)
-
-		if !ok {
-			res.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		factory := zebra.Factory()
-		resMap := zebra.NewResourceMap(factory)
-
-		dbResources, err := getData()
-		if err != nil {
-			log.Info("the import of data from the data base failed")
-		}
-
-		for i := 0; i < len(dbResources); i++ {
-			zebraRes := dbResources[i]
-
-			resource := createResFromData(zebraRes)
-
-			resMap.Add(resource) //nolint:errcheck
-		}
-
-		// Read request, return error if applicable
-		if err := readJSON(ctx, req, resMap); err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			log.Info("resources could not be created, could not read request")
-
-			return
-		}
-
-		if validateResources(ctx, resMap) != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			log.Info("resources could not be created, found invalid resource(s)")
-
-			return
-		}
-
-		// Add all resources to store
-		if applyFunc(resMap, api.Store.Create) != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			log.Info("internal server error while creating resources")
-
-			return
-		}
-
-		log.Info("successfully created resources")
-
-		res.WriteHeader(http.StatusOK)
-	}
+	return nil, ""
 }
