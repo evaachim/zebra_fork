@@ -1,8 +1,16 @@
 package main //nolint:testpackage
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"testing"
 
+	"github.com/project-safari/zebra/script"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -270,4 +278,56 @@ func TestCreateRes(t *testing.T) {
 	rt.Type = "network.vlanpool"
 	testCreateVP, _ := createResFromData(rt)
 	assert.NotNil(testCreateVP)
+}
+
+var errFake = errors.New("fake error")
+
+type fakeReader struct {
+	err bool
+}
+
+func (f fakeReader) Read(b []byte) (int, error) {
+	if f.err {
+		return 0, errFake
+	}
+
+	return 0, io.EOF
+}
+
+func makeLabelRequest(assert *assert.Assertions, resources *ResourceAPI, labels ...string) *http.Request {
+	ctx := context.WithValue(context.Background(), ResourcesCtxKey, resources)
+	ctx = context.WithValue(ctx, script.AuthCtxKey, "testKey")
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "/api/v1/labels", nil)
+	assert.Nil(err)
+	assert.NotNil(req)
+
+	v := map[string][]string{"labels": labels}
+	b, e := json.Marshal(v)
+	assert.Nil(e)
+
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+
+	return req
+}
+
+func TestReadJSON(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	req := makeLabelRequest(assert, nil, "a", "b", "c")
+
+	labelReq := &struct {
+		Labels []string `json:"labels"`
+	}{Labels: []string{}}
+
+	assert.Nil(script.ReadJSON(context.Background(), req, labelReq))
+
+	// Bad IO reader
+	req.Body = ioutil.NopCloser(fakeReader{err: true})
+	assert.NotNil(script.ReadJSON(context.Background(), req, nil))
+
+	// Empty Body
+	req.Body = ioutil.NopCloser(fakeReader{err: false})
+	assert.NotNil(script.ReadJSON(context.Background(), req, nil))
 }

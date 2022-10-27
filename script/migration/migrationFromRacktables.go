@@ -6,32 +6,24 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 
 	//nolint:gci
 
-	"github.com/go-logr/logr"
-
-	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/model"
 	"github.com/project-safari/zebra/model/compute"
 	"github.com/project-safari/zebra/model/dc"
 	"github.com/project-safari/zebra/model/network"
+	"github.com/project-safari/zebra/script"
 
 	// this is needed for mysql access.
 	_ "github.com/go-sql-driver/mysql"
 )
-
-var ErrEmptyBody = errors.New("empty request body, cannot proceed")
 
 // Racktables struct is the struct that contains info from the racktables table in the mysql db.
 //
@@ -156,7 +148,7 @@ func main() {
 	// Statement to query the db - currently only one rack, 76.
 	statement := "SELECT rack_id, object_id  FROM rackspace WHERE rack_id = 76"
 	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
+	db, err := sql.Open("mysql", "username:1234@/racktables")
 	// if there is an error opening the connection, handle it
 	if err != nil {
 		log.Print(err.Error())
@@ -174,16 +166,16 @@ func main() {
 		// for each row, scan the result into our tag composite object
 		err = results.Scan(&rt.RackID, &rt.ID)
 
-		rt.ID, rt.Name, rt.Label, rt.ObjtypeID, rt.AssetNo, rt.Problems, rt.Comments = getMoreDetails(rt.ID)
+		rt.ID, rt.Name, rt.Label, rt.ObjtypeID, rt.AssetNo, rt.Problems, rt.Comments = getMoreDetails(rt.ID, db)
 
 		typeID := rt.ObjtypeID
 		resType := determineIDMeaning(typeID, rt.Name)
 		rt.Type = resType
 
 		if strings.Contains(resType, "compute") || resType == "network.switch" {
-			rt.IP = getIPDetaiLs(rt.ID)
+			rt.IP = getIPDetaiLs(rt.ID, db)
 
-			ownedBy := getUserDetails(rt.IP)
+			ownedBy := getUserDetails(rt.IP, db)
 			rt.Owner = ownedBy
 		} else {
 			rt.IP = "null"
@@ -193,15 +185,15 @@ func main() {
 		}
 
 		if resType == "network.switch" {
-			portInfo := getPortDetails(rt.ID)
+			portInfo := getPortDetails(rt.ID, db)
 			rt.Port = portInfo
 		} else {
 			portID := -1
 			rt.Port = portID
 		}
 
-		rackID := getRackDetails(rt.ID)
-		rowName, rowID, rowLocation := getRowDetails(rackID)
+		rackID := getRackDetails(rt.ID, db)
+		rowName, rowID, rowLocation := getRowDetails(rackID, db)
 
 		rt.RowName = rowName
 		rt.RowID = rowID
@@ -235,7 +227,7 @@ func allData(rackArr []Racktables) {
 
 	myAPI := NewResourceAPI(factory)
 
-	h := processPost()
+	h := script.HandlePost()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h(w, r, nil)
 	})
@@ -246,13 +238,13 @@ func allData(rackArr []Racktables) {
 		_, eachRes := createResFromData(res)
 
 		// Create new resource on zebra with post request.
-		req := createRequest("POST", "/resources", eachRes, myAPI)
+		req := createRequests("POST", "/resources", eachRes, myAPI)
 		rr := httptest.NewRecorder()
 		handler.ServeHTTP(rr, req)
 	}
 }
 
-func createRequest(method string, url string,
+func createRequests(method string, url string,
 	body string, api *ResourceAPI,
 ) *http.Request {
 	ctx := context.WithValue(context.Background(), ResourcesCtxKey, api)
@@ -266,107 +258,11 @@ func createRequest(method string, url string,
 	return req
 }
 
-func readJSONdata(ctx context.Context, req *http.Request, data interface{}) error {
-	log := logr.FromContextOrDiscard(ctx)
-
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-
-	log.Info("request", "body", string(body))
-
-	if len(body) > 0 {
-		err = json.Unmarshal(body, data)
-	} else {
-		err = ErrEmptyBody
-	}
-
-	return err
-}
-
-func addAndPost(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
-	for _, l := range resMap.Resources {
-		for _, r := range l.Resources {
-			if err := f(r); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func validateRes(ctx context.Context, resMap *zebra.ResourceMap) error {
-	// Check all resources to make sure they are valid
-	for _, l := range resMap.Resources {
-		for _, r := range l.Resources {
-			if err := r.Validate(ctx); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func processPost() httprouter.Handle {
-	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		ctx := req.Context()
-		log := logr.FromContextOrDiscard(ctx)
-		api, ok := ctx.Value(ResourcesCtxKey).(*ResourceAPI)
-
-		if !ok {
-			res.WriteHeader(http.StatusInternalServerError)
-
-			return
-		}
-
-		resMap := zebra.NewResourceMap(model.Factory())
-
-		// Read request, return error if applicable
-		if err := readJSONdata(ctx, req, resMap); err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			log.Info("resources could not be created, could not read request")
-
-			return
-		}
-
-		if validateRes(ctx, resMap) != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			log.Info("resources could not be created, found invalid resource(s)")
-
-			return
-		}
-
-		// Add all resources to store
-		if addAndPost(resMap, api.Store.Create) != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			log.Info("internal server error while creating resources")
-
-			return
-		}
-
-		log.Info("successfully created resources")
-
-		res.WriteHeader(http.StatusOK)
-	}
-}
-
 // Get IPs from db based on type id.
-func getIPDetaiLs(objectID string) string {
+func getIPDetaiLs(objectID string, db *sql.DB) string {
 	var rt Racktables
 
 	statement := "SELECT ip FROM IPv4Allocation WHERE object_id = ?"
-
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, objectID)
@@ -389,21 +285,12 @@ func getIPDetaiLs(objectID string) string {
 }
 
 // Get port IDs from db based on type ID.
-func getPortDetails(objectID string) int {
+func getPortDetails(objectID string, db *sql.DB) int {
 	var rt Racktables
 
 	numPort := 0
 
 	statement := "SELECT id FROM Port WHERE object_id = ?"
-
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, objectID)
@@ -411,7 +298,7 @@ func getPortDetails(objectID string) int {
 		panic(err.Error())
 	}
 
-	defer results.Close()
+	// defer results.Close()
 
 	for results.Next() {
 		err = results.Scan(&rt.Port)
@@ -427,7 +314,7 @@ func getPortDetails(objectID string) int {
 }
 
 // Get rack details using the resource's specific ID.
-func getMoreDetails(objectID string) (string, string, string, string, string, string, string) {
+func getMoreDetails(objectID string, db *sql.DB) (string, string, string, string, string, string, string) {
 	var rt Racktables
 
 	var label sql.NullString
@@ -437,18 +324,9 @@ func getMoreDetails(objectID string) (string, string, string, string, string, st
 	var comment sql.NullString
 
 	statement := "SELECT id, name, label, objtype_id, asset_no, has_problems, comment FROM rackobject WHERE id = ?"
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, objectID)
-
 	if err != nil {
 		panic(err.Error())
 	}
@@ -474,22 +352,13 @@ func getMoreDetails(objectID string) (string, string, string, string, string, st
 	return rt.ID, rt.Name, rt.Label, rt.ObjtypeID, rt.AssetNo, rt.Problems, rt.Comments
 }
 
-func getRackDetails(objID string) string {
+func getRackDetails(objID string, db *sql.DB) string {
 	var rt Racktables
 
 	statement := "SELECT rack_id FROM RackSpace WHERE object_id = ?"
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, objID)
-
 	if err != nil {
 		panic(err.Error())
 	}
@@ -508,19 +377,10 @@ func getRackDetails(objID string) string {
 }
 
 // Get row and location details based on rack info (rack ID).
-func getRowDetails(id string) (string, string, string) {
+func getRowDetails(id string, db *sql.DB) (string, string, string) {
 	var rt Racktables
 
 	statement := "SELECT row_id, row_name, location_name FROM Rack WHERE id = ?"
-
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, id)
@@ -541,19 +401,10 @@ func getRowDetails(id string) (string, string, string) {
 }
 
 // Get owner / user details based on the resource's IP.
-func getUserDetails(resIP string) string {
+func getUserDetails(resIP string, db *sql.DB) string {
 	var rt Racktables
 
 	statement := "SELECT user FROM IPv4Log WHERE ip = ?"
-
-	// to be filled in with appropriate user, password, and db name.
-	db, err := sql.Open("mysql", "eachim:1234@/racktables")
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		log.Print(err.Error())
-	}
-
-	defer db.Close()
 
 	// Execute the query
 	results, err := db.Query(statement, resIP)
@@ -580,78 +431,86 @@ func getUserDetails(resIP string) string {
 //
 //nolint:cyclop, funlen, lll
 func createResFromData(res Racktables) (zebra.Resource, string) {
-	// dbResources, err := GetData()
-	// var resType = ""
 	resType := res.Type
 
 	switch resType {
 	case "dc.datacenetr":
 		addR := dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
 		print("Added dc " + res.Name + "\n")
-		this := `{"datacenter":[{"id":` + res.ID + `,"type:"` + resType + `,"name:"` + res.Name + `,owner:` + res.Owner + "}]}"
+		// this := `{"datacenter":[{"id":` + res.ID + `,"type:"` + resType + `,"name:"` + res.Name + `,owner:` + res.Owner + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "dc.lab":
 		addR := dc.NewLab(res.Name, res.Owner, "system.group-datacenter-lab")
 		print("Added lab " + res.Name + "\n")
-		this := `{"lab":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		// this := `{"lab":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "dc.rack", "dc.shelf":
 		addR := dc.NewRack(res.RowName, res.RowID, res.Name, res.Location, res.Owner, "system.group-datacenter-lab-rack")
 		print("Added rack " + res.Name + "\n")
-		this := `{"rack":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"Row":` + res.RowName + `,"RowID":` + res.RowID + `,"Asset":` + res.AssetNo + `,"RowID":` + res.RowID + `,"Problems":` + res.Problems + `,"Location":` + res.Location + "}]}"
+		// this := `{"rack":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"Row":` + res.RowName + `,"RowID":` + res.RowID + `,"Asset":` + res.AssetNo + `,"RowID":` + res.RowID + `,"Problems":` + res.Problems + `,"Location":` + res.Location + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "compute.server":
 		addR := compute.NewServer("serial", "model", res.Name, res.Owner, "system.group-server")
 		print("Added server " + res.Name + "\n")
-		this := `{"server":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"boardIP":` + res.IP + "}]}"
+		// this := `{"server":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"boardIP":` + res.IP + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "compute.esx":
 		addR := compute.NewESX(res.ID, res.Name, res.Owner, "system.group-server-esx")
 		print("Added esx " + res.Name + "\n")
-		this := `{"esx":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		// this := `{"esx":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "compute.vm":
 		addR := compute.NewVM("esx??", res.Name, res.Owner, "system.group-server-vcenter-vm")
 		print("Added esx" + res.Name + "\n")
-		this := `{"vm":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		// this := `{"vm":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "compute.vcenetr":
 		addR := compute.NewVCenter(res.Name, res.Owner, "system.group-server-vcenter")
 		print("Added vc " + res.Name + "\n")
-		this := `{"vcenter":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		// this := `{"vcenter":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "network.switch":
 		addR := network.NewSwitch(res.Name, res.Owner, "system.group-vlan-switch")
 		print("Added sw " + res.Name + "\n")
-		this := `{"switch":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"managementIp":` + res.IP + `,"numPorts":` + strconv.Itoa(res.Port) + "}]}"
+		// this := `{"switch":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"managementIp":` + res.IP + `,"numPorts":` + strconv.Itoa(res.Port) + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "network.ipaddresspool":
 		addR := network.NewIPAddressPool(res.Name, res.Owner, "system.group-vlan-ipaddrpool")
 		print("Added IPpool" + res.Name + "\n")
-		this := `{"IPAddressPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		// this := `{"IPAddressPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 
 	case "network.vlanpool":
 		addR := network.NewVLANPool(res.Name, res.ObjtypeID, "system.group-vlan")
 		print("Added vlan" + res.Name + "\n")
-		this := `{"VLANPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		// this := `{"VLANPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		this := fmt.Sprintf("%v", addR)
 
 		return addR, this
 	}

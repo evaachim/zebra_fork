@@ -4,6 +4,11 @@ This ReadMe file contains information about the structure of the databases and a
 
 MigrationFromRacktables.go is a script to provide data migration from the racktables database to the Zebra tool.
 
+The database that is used for this script is a MariaDB database. The user should be advised that the MariaDB mysql user utilized here has the following credentials: 
+                    
+                        username: username
+                        password: 1234
+
     The racktables database has several tables which contain information about resources that are relevant to the Zebra tool.
 
                         +---------------------------+
