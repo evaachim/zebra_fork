@@ -8,16 +8,24 @@ build_zebra = go build -tags "$(BUILD_TAGS)" -buildmode=pie -ldflags "-X main.ve
 build_zebra_server = go build -tags "$(BUILD_TAGS)" -buildmode=pie -ldflags "-X main.version=$(VERSION_FULL) -extldflags '-static'" -o zebra-server ./cmd/server
 build_herd = go build -tags "$(BUILD_TAGS)" -buildmode=pie -ldflags "-X main.version=$(VERSION_FULL) -extldflags '-static'" -o herd ./cmd/herd
 
+build_mig = go build -tags "$(BUILD_TAGS)" -buildmode=pie -ldflags "-X main.version=$(VERSION_FULL) -extldflags '-static'" -o mig ./script/mig
+
 zebra: $(GO_SRC) go.mod go.sum
 	$(call build_zebra)
 
 zebra-server: $(GO_SRC) go.mod go.sum
 	$(call build_zebra_server)
 
-herd: $(GO_SRC) go.mod go.sum
+herd:  $(GO_SRC) go.mod go.sum
 	$(call build_herd)
 
-bin: zebra zebra-server herd
+mig: $(GO_SRC) go.mod go.sum
+	$(call build_mig)
+
+## when wanting to perform migration, one should add && ./mig --migrate ./simulator/simulator-store to the first line
+## under simulator-setup.
+
+bin: zebra zebra-server mig herd
 
 lint: ./.golangcilint.yaml
 	./bin/golangci-lint --version || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./bin v1.46.2 
