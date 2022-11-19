@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/go-logr/logr"
+	"github.com/project-safari/zebra/script/migration"
 	"github.com/spf13/cobra"
 	"gojini.dev/config"
 	"gojini.dev/web"
@@ -20,6 +21,8 @@ func main() {
 	if e := execRootCmd(); e != nil {
 		os.Exit(1)
 	}
+
+	migration.Do()
 }
 
 func execRootCmd() error {

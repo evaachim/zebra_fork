@@ -1,6 +1,6 @@
 // Migration Script for data - it can be used to fetch,
 // add, and use the data inside zebra.
-package main
+package migration
 
 import (
 	"bytes"
@@ -16,9 +16,7 @@ import (
 	//nolint:gci
 
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/model/compute"
 	"github.com/project-safari/zebra/model/dc"
-	"github.com/project-safari/zebra/model/network"
 	"github.com/project-safari/zebra/script"
 
 	// this is needed for mysql access.
@@ -140,7 +138,7 @@ func determineIDMeaning(id string, name string) string {
 }
 
 //nolint:funlen
-func main() {
+func Do() {
 	var rt Racktables
 
 	RackArr := []Racktables{}
@@ -235,7 +233,7 @@ func allData(rackArr []Racktables) {
 	for i := 0; i < (len(rackArr)); i++ {
 		res := rackArr[i]
 
-		_, eachRes := createResFromData(res)
+		_, _, eachRes := CreateResFromData(res)
 
 		// Create new resource on zebra with post request.
 		req := createRequests("POST", "/resources", eachRes, myAPI)
@@ -428,92 +426,81 @@ func getUserDetails(resIP string, db *sql.DB) string {
 // Function to create a resource given data obtained from db, guven a certain type.
 //
 // Returns a zebra.Resource and a string version of the resource struct to be used with APIs.
-//
-//nolint:cyclop, funlen, lll
-func createResFromData(res Racktables) (zebra.Resource, string) {
+func CreateResFromData(res Racktables) (zebra.Resource, string, string) {
 	resType := res.Type
 
 	switch resType {
-	case "dc.datacenetr":
+
+	case "dc.dataceneter":
 		addR := dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
-		print("Added dc " + res.Name + "\n")
-		// this := `{"datacenter":[{"id":` + res.ID + `,"type:"` + resType + `,"name:"` + res.Name + `,owner:` + res.Owner + "}]}"
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "dc", this
 
 	case "dc.lab":
 		addR := dc.NewLab(res.Name, res.Owner, "system.group-datacenter-lab")
-		print("Added lab " + res.Name + "\n")
-		// this := `{"lab":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "lab", this
 
 	case "dc.rack", "dc.shelf":
 		addR := dc.NewRack(res.RowName, res.RowID, res.Name, res.Location, res.Owner, "system.group-datacenter-lab-rack")
-		print("Added rack " + res.Name + "\n")
-		// this := `{"rack":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"Row":` + res.RowName + `,"RowID":` + res.RowID + `,"Asset":` + res.AssetNo + `,"RowID":` + res.RowID + `,"Problems":` + res.Problems + `,"Location":` + res.Location + "}]}"
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "rack", this
 
 	case "compute.server":
-		addR := compute.NewServer("serial", "model", res.Name, res.Owner, "system.group-server")
-		print("Added server " + res.Name + "\n")
-		// this := `{"server":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"boardIP":` + res.IP + "}]}"
+		addR := serverFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "server", this
 
 	case "compute.esx":
-		addR := compute.NewESX(res.ID, res.Name, res.Owner, "system.group-server-esx")
-		print("Added esx " + res.Name + "\n")
-		// this := `{"esx":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		addR := esxFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "esx", this
 
 	case "compute.vm":
-		addR := compute.NewVM("esx??", res.Name, res.Owner, "system.group-server-vcenter-vm")
-		print("Added esx" + res.Name + "\n")
-		// this := `{"vm":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+		addR := vmFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "vm", this
 
-	case "compute.vcenetr":
-		addR := compute.NewVCenter(res.Name, res.Owner, "system.group-server-vcenter")
-		print("Added vc " + res.Name + "\n")
-		// this := `{"vcenter":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"ip":` + res.IP + "}]}"
+	case "compute.vceneter":
+		addR := vcenterFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "vcenter", this
 
 	case "network.switch":
-		addR := network.NewSwitch(res.Name, res.Owner, "system.group-vlan-switch")
-		print("Added sw " + res.Name + "\n")
-		// this := `{"switch":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + `,"managementIp":` + res.IP + `,"numPorts":` + strconv.Itoa(res.Port) + "}]}"
+		addR := switchFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "switch", this
 
 	case "network.ipaddresspool":
-		addR := network.NewIPAddressPool(res.Name, res.Owner, "system.group-vlan-ipaddrpool")
-		print("Added IPpool" + res.Name + "\n")
-		// this := `{"IPAddressPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		addR := addressPoolFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "ip-address-pool", this
 
 	case "network.vlanpool":
-		addR := network.NewVLANPool(res.Name, res.ObjtypeID, "system.group-vlan")
-		print("Added vlan" + res.Name + "\n")
-		// this := `{"VLANPool":[{"id":` + res.ID + `,"type":` + resType + `,"name":` + res.Name + `,"owner":` + res.Owner + "}]}"
+		addR := vlanFiller(res)
+
 		this := fmt.Sprintf("%v", addR)
 
-		return addR, this
+		return addR, "vlan-pool", this
 	}
 
-	return nil, ""
+	return nil, "", ""
 }
