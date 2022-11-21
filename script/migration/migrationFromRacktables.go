@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -137,8 +138,8 @@ func determineIDMeaning(id string, name string) string {
 	return this
 }
 
-//nolint:funlen
-func Do() {
+//nolint:funlen, cyclop
+func Do() []Racktables {
 	var rt Racktables
 
 	RackArr := []Racktables{}
@@ -175,8 +176,12 @@ func Do() {
 
 			ownedBy := getUserDetails(rt.IP, db)
 			rt.Owner = ownedBy
+
+			if rt.IP == "" || net.ParseIP(rt.IP) == nil {
+				rt.IP = "127.0.0.1"
+			}
 		} else {
-			rt.IP = "null"
+			rt.IP = "127.0.0.1"
 
 			ownedBy := "null"
 			rt.Owner = ownedBy
@@ -218,6 +223,13 @@ func Do() {
 	}
 
 	allData(RackArr)
+
+	return RackArr
+}
+
+func Post() {
+	postData := Do()
+	allData(postData)
 }
 
 func allData(rackArr []Racktables) {
@@ -250,7 +262,7 @@ func createRequests(method string, url string,
 
 	if body != "" {
 		req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
-		print("Added   ", body, "  successfully!\n")
+		print("Posted   ", body, "  successfully!\n")
 	}
 
 	return req
@@ -259,6 +271,8 @@ func createRequests(method string, url string,
 // Get IPs from db based on type id.
 func getIPDetaiLs(objectID string, db *sql.DB) string {
 	var rt Racktables
+
+	var IPnum string
 
 	statement := "SELECT ip FROM IPv4Allocation WHERE object_id = ?"
 
@@ -272,7 +286,9 @@ func getIPDetaiLs(objectID string, db *sql.DB) string {
 
 	for results.Next() {
 		// for each row, scan the result into our tag composite object
-		err = results.Scan(&rt.IP)
+		err = results.Scan(&IPnum)
+
+		rt.IP = IPnum
 
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
@@ -426,11 +442,12 @@ func getUserDetails(resIP string, db *sql.DB) string {
 // Function to create a resource given data obtained from db, guven a certain type.
 //
 // Returns a zebra.Resource and a string version of the resource struct to be used with APIs.
+//
+//nolint:cyclop, funlen
 func CreateResFromData(res Racktables) (zebra.Resource, string, string) {
 	resType := res.Type
 
 	switch resType {
-
 	case "dc.dataceneter":
 		addR := dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
 

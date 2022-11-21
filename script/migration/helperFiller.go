@@ -1,4 +1,4 @@
-//nolint:gomnd
+//nolint:gomnd, goconst
 package migration
 
 import (
@@ -82,7 +82,7 @@ func esxFiller(rt Racktables) zebra.Resource {
 		"system.group-server-esx",
 	)
 
-	s.IP = net.IP(theIP)
+	s.IP = theIP
 	s.Credentials = zebra.NewCredentials(user)
 	_ = s.Credentials.Add("password", fmt.Sprintf(user, 123))
 
@@ -114,7 +114,7 @@ func vcenterFiller(rt Racktables) zebra.Resource {
 		"system.group-server-vcenter",
 	)
 
-	s.IP = net.IP(theIP)
+	s.IP = theIP
 	s.Credentials = zebra.NewCredentials(user)
 	_ = s.Credentials.Add("password", fmt.Sprintf(user, 123))
 
@@ -220,4 +220,20 @@ func vlanFiller(rt Racktables) zebra.Resource {
 	r.RangeEnd = uint16(someEnd)
 
 	return r
+}
+
+func DBData(n int) []zebra.Resource {
+	RackArr := Do()
+
+	resources := []zebra.Resource{}
+
+	for i := 0; i < n; i++ {
+		res := RackArr[i]
+
+		eachRes, _, _ := CreateResFromData(res)
+
+		resources = append(resources, eachRes)
+	}
+
+	return resources
 }
