@@ -55,6 +55,8 @@ func execRootCmd() error {
 }
 
 func main() {
+	// migration.Post() is to execute with API - github cannot access the DB and it affects the test check.
+	// migration.Post()
 	if e := execRootCmd(); e != nil {
 		os.Exit(1)
 	}
