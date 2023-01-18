@@ -1,10 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
-	"log"
-	"os"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 
 	// This worker hosts both Workflow and Activity functions
 	w := worker.New(c, "TASK_QUEUE", worker.Options{})
-	w.RegisterWorkflow(app.ZebraflowExecutable)
-	w.RegisterActivity(app.ProcessLease)
-	w.RegisterActivity(app.ProcessLogin)
+	w.RegisterWorkflow(framework.ZebraflowExecutable)
+	w.RegisterActivity(framework.ProcessLease)
+	w.RegisterActivity(framework.ProcessLogin)
 
 	// Start listening to the Task Queue
 	err = w.Run(worker.InterruptCh())
