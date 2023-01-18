@@ -23,5 +23,11 @@ func ZebraflowExecutable(ctx workflow.Context, request lease.Lease, store zebra.
 	// activity: lease requested and leasable;
 	err := workflow.ExecuteActivity(ctx, ProcessLease, request).Get(ctx, &result)
 
+	// activity: queries;
+	err := workflow.ExecuteActivity(ctx, ProcessQuery, request).Get(ctx, &result)
+
+	// activity: posts;
+	err := workflow.ExecuteActivity(ctx, ProcessPost, request).Get(ctx, &result)
+
 	return result, err
 }

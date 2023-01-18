@@ -11,6 +11,7 @@ import (
 
 var ErrLeaseNotProcessed = errors.New(`lease request not processed`)
 var ErrLoginNotProcessed = errors.New(`login request not processed`)
+var ErrQuerryNotProcessed = errors.New(`query request not processed`)
 
 func ProcessLease(ctx context.Context, request Lease.Lease) (string, error) {
 	if request.CanLease() && request.IsFree() {
@@ -30,4 +31,32 @@ func ProcessLogin(ctx context.Context, store zebra.Store, email string) (string,
 	}
 
 	return "Login Not Processed", ErrLoginNotProcessed
+}
+
+func ProcessQuery(ctx context.Context, this string) (string, error) {
+	if this != "" {
+		// do query stuff.
+		return "Querry Processed", nil
+	}
+
+	return "Querry Not Processed", ErrQuerryNotProcessed
+}
+
+func ProcessQuery(ctx context.Context, this string) (string, error) {
+	if this != "" {
+		// do query stuff.
+		return "Querry Processed", nil
+	}
+
+	return "Query Not Processed", ErrQuerryNotProcessed
+}
+
+func ProcessPost(ctx context.Context, this string) (string, error) {
+	if this != "" {
+		// do post stuff.
+		// some post stuff already done (such as for the db data).
+		return "Post Processed", nil
+	}
+
+	return "Post Not Processed", ErrQuerryNotProcessed
 }
