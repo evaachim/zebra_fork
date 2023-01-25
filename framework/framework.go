@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func ZebraflowExecutable(ctx workflow.Context, request lease.Lease, store zebra.Store, email string) error {
+func ZebraflowExecutable(ctx workflow.Context, request lease.Lease, store zebra.Store, email string) (string, error, error, error, error) {
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 500,
 	}
@@ -21,13 +21,13 @@ func ZebraflowExecutable(ctx workflow.Context, request lease.Lease, store zebra.
 	err := workflow.ExecuteActivity(ctx, ProcessLogin, store, email).Get(ctx, &result)
 
 	// activity: lease requested and leasable;
-	err := workflow.ExecuteActivity(ctx, ProcessLease, request).Get(ctx, &result)
+	err2 := workflow.ExecuteActivity(ctx, ProcessLease, request).Get(ctx, &result)
 
 	// activity: queries;
-	err := workflow.ExecuteActivity(ctx, ProcessQuery, request).Get(ctx, &result)
+	err3 := workflow.ExecuteActivity(ctx, ProcessQuery, request).Get(ctx, &result)
 
 	// activity: posts;
-	err := workflow.ExecuteActivity(ctx, ProcessPost, request).Get(ctx, &result)
+	err4 := workflow.ExecuteActivity(ctx, ProcessPost, request).Get(ctx, &result)
 
-	return result, err
+	return result, err, err2, err3, err4
 }

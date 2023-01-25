@@ -24,11 +24,12 @@ func ProcessLease(ctx context.Context, request Lease.Lease) (string, error) {
 }
 
 func ProcessLogin(ctx context.Context, store zebra.Store, email string) (string, error) {
-	if findUser() && request.IsFree() {
-		// do lease stuff.
+	/*if findUser() && request.IsFree() {
+		// do login stuff.
 
 		return "Login Processed", nil
 	}
+	*/
 
 	return "Login Not Processed", ErrLoginNotProcessed
 }
@@ -42,15 +43,6 @@ func ProcessQuery(ctx context.Context, this string) (string, error) {
 	return "Querry Not Processed", ErrQuerryNotProcessed
 }
 
-func ProcessQuery(ctx context.Context, this string) (string, error) {
-	if this != "" {
-		// do query stuff.
-		return "Querry Processed", nil
-	}
-
-	return "Query Not Processed", ErrQuerryNotProcessed
-}
-
 func ProcessPost(ctx context.Context, this string) (string, error) {
 	if this != "" {
 		// do post stuff.
@@ -59,4 +51,15 @@ func ProcessPost(ctx context.Context, this string) (string, error) {
 	}
 
 	return "Post Not Processed", ErrQuerryNotProcessed
+}
+
+func ProcessTasks(ctx context.Context, store zebra.Store, email string) (string, error) {
+	/*	if findUser() && request.IsFree() {
+			// do lease stuff.
+
+			return "Login Processed", nil
+		}
+	*/
+
+	return "Login Not Processed", ErrLoginNotProcessed
 }
