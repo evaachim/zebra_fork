@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/project-safari/zebra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
@@ -20,7 +19,7 @@ func printResults(result string, workflowID, runID string) {
 	fmt.Printf("\n%s\n\n", result)
 }
 
-func ZebraflowExecutable(ctx workflow.Context, store zebra.Store, email string) (string, error) {
+func ZebraflowExecutable(ctx workflow.Context, email string) (string, error) {
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 500,
 	}
@@ -29,16 +28,16 @@ func ZebraflowExecutable(ctx workflow.Context, store zebra.Store, email string) 
 
 	var result string
 
-	if findUser(store, email) != nil {
-		// do login stuff.
+	// if findUser(store, email) != nil {
+	// do login stuff.
 
-		// activity: login;
-		err := workflow.ExecuteActivity(ctx, ProcessLogin, store, email).Get(ctx, &result)
-		return result, err
+	// activity: login;
+	err := workflow.ExecuteActivity(ctx, ProcessLogin, email).Get(ctx, &result)
+	return result, err
 
-	}
+	//}
 
-	return result, nil
+	// return result, nil
 }
 
 func ProcessLogin(ctx context.Context, email string) (string, error) {
