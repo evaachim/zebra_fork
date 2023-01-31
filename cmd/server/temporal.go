@@ -19,25 +19,25 @@ func printResults(result string, workflowID, runID string) {
 	fmt.Printf("\n%s\n\n", result)
 }
 
-func ZebraflowExecutable(ctx workflow.Context, email string) (string, error) {
+func ZebraflowLogin(ctx workflow.Context, email string) (string, error) {
 	options := workflow.ActivityOptions{
-		StartToCloseTimeout: time.Second * 500,
+		StartToCloseTimeout: time.Second * 5,
 	}
+
+	print("\nI had been here")
 
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	var result string
-
-	// if findUser(store, email) != nil {
 	// do login stuff.
+	print("\nI was here")
+
+	var result string
 
 	// activity: login;
 	err := workflow.ExecuteActivity(ctx, ProcessLogin, email).Get(ctx, &result)
+	print("\nI am here")
+
 	return result, err
-
-	//}
-
-	// return result, nil
 }
 
 func ProcessLogin(ctx context.Context, email string) (string, error) {
@@ -60,7 +60,8 @@ func firstClient(wg *sync.WaitGroup) {
 	//workflow.
 
 	// activity.
-	w.RegisterWorkflow(ZebraflowExecutable)
+	w.RegisterWorkflow(ZebraflowLogin)
+	w.RegisterActivity(ProcessLogin)
 
 	// Start listening to the Task Queue
 	err = w.Run(worker.InterruptCh())
@@ -97,12 +98,13 @@ func secondClient(wg *sync.WaitGroup) {
 	}
 
 	// Get the results
-	var greeting string
-	err = we.Get(context.Background(), &greeting)
+	var result string
+	err = we.Get(context.Background(), &result)
+
 	if err != nil {
 		log.Fatalln("unable to get Workflow result", err)
 	}
 
-	printResults(greeting, we.GetID(), we.GetRunID())
+	printResults(result, we.GetID(), we.GetRunID())
 
 }
