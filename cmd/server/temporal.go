@@ -76,6 +76,35 @@ func ProcessRegister(ctx context.Context, email string) (string, error) {
 	return "Register Processed", nil
 }
 
+func ProcessActivities(ctx context.Context, email string) (string, error) {
+	routeHandler()
+
+	print("Finished tasks")
+
+	return "Tasks Processed", nil
+}
+
+func ZebraflowActivities(ctx workflow.Context, email string) (string, error) {
+	options := workflow.ActivityOptions{
+		StartToCloseTimeout: time.Second * 5,
+	}
+
+	print("\nI had been here")
+
+	ctx = workflow.WithActivityOptions(ctx, options)
+
+	// do login stuff.
+	print("\nI was here")
+
+	var register string
+
+	// activity: login;
+	err := workflow.ExecuteActivity(ctx, ProcessActivities, email).Get(ctx, &register)
+	print("\nI am here")
+
+	return register, err
+}
+
 func firstClient(wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Create the client object just once per process
