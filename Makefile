@@ -24,6 +24,7 @@ mig: $(GO_SRC) go.mod go.sum
 
 ## when wanting to perform migration, one should add && ./mig --migrate ./simulator/simulator-store to the first line
 ## under simulator-setup.
+## otherwise, remove that part.
 
 bin: zebra zebra-server mig herd
 
@@ -33,7 +34,7 @@ lint: ./.golangcilint.yaml
 
 .PHONY: simulator-setup
 simulator-setup: bin
-	rm -rf ./simulator/simulator-store && ./herd --store ./simulator/simulator-store
+	rm -rf ./simulator/simulator-store && ./herd --store ./simulator/simulator-store && ./mig --migrate ./simulator/simulator-store
 	rm -f ./simulator/zebra-simulator.json
 	rm -f ./simulator/admin.yaml
 	./zebra -c ./simulator/admin.yaml config init https://127.0.0.1:6666
