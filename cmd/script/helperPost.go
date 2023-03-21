@@ -1,6 +1,7 @@
 package script
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,9 +12,27 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
 	"github.com/project-safari/zebra/model"
+	"github.com/stretchr/testify/assert"
 )
 
 var ErrEmptyBody = errors.New("invalid GET query request body")
+
+func MakeLabelRequest(assert *assert.Assertions, resources *ResourceAPI, labels ...string) *http.Request {
+	ctx := context.WithValue(context.Background(), ResourcesCtxKey, resources)
+	ctx = context.WithValue(ctx, AuthCtxKey, "testKey")
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "/api/v1/labels", nil)
+	assert.Nil(err)
+	assert.NotNil(req)
+
+	v := map[string][]string{"labels": labels}
+	b, e := json.Marshal(v)
+	assert.Nil(e)
+
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+
+	return req
+}
 
 func ReadJSON(ctx context.Context, req *http.Request, data interface{}) error {
 	log := logr.FromContextOrDiscard(ctx)
@@ -50,7 +69,7 @@ func validateResources(ctx context.Context, resMap *zebra.ResourceMap) error {
 
 // Apply given function f to each resource in resMap.
 // Return error if it occurrs or nil if successful.
-func applyFunc(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
+func ApplyFunc(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
 	for _, l := range resMap.Resources {
 		for _, r := range l.Resources {
 			if err := f(r); err != nil {
@@ -112,7 +131,7 @@ func HandlePost() httprouter.Handle {
 		}
 
 		// Add all resources to store
-		if applyFunc(resMap, api.Store.Create) != nil {
+		if ApplyFunc(resMap, api.Store.Create) != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			log.Info("internal server error while creating resources")
 
@@ -122,5 +141,23 @@ func HandlePost() httprouter.Handle {
 		log.Info("successfully created resources")
 
 		res.WriteHeader(http.StatusOK)
+	}
+}
+
+func WriteJSON(ctx context.Context, res http.ResponseWriter, data interface{}) {
+	log := logr.FromContextOrDiscard(ctx)
+
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+
+	if _, err := res.Write(bytes); err != nil {
+		log.Error(err, "error writing response")
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
+	"github.com/project-safari/zebra/cmd/script"
 	"github.com/project-safari/zebra/store"
 )
 
@@ -59,20 +60,6 @@ func (api *ResourceAPI) Initialize(storageRoot string) error {
 	return api.Store.Initialize()
 }
 
-// Apply given function f to each resource in resMap.
-// Return error if it occurrs or nil if successful.
-func applyFunc(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
-	for _, l := range resMap.Resources {
-		for _, r := range l.Resources {
-			if err := f(r); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 // Validate all queries in given slice.
 func validateQueries(queries []zebra.Query) error {
 	for _, q := range queries {
@@ -99,7 +86,7 @@ func handleQuery() httprouter.Handle {
 		qr := new(QueryRequest)
 
 		// Read request, return error if applicable
-		if err := readJSON(ctx, req, qr); err != nil && !errors.Is(err, ErrEmptyBody) {
+		if err := script.ReadJSON(ctx, req, qr); err != nil && !errors.Is(err, script.ErrEmptyBody) {
 			res.WriteHeader(http.StatusBadRequest)
 			log.Info("resources could not be queried, could not read request")
 
@@ -140,7 +127,7 @@ func handleQuery() httprouter.Handle {
 		log.Info("successfully queried resources")
 
 		// Write response body
-		writeJSON(ctx, res, resources)
+		script.WriteJSON(ctx, res, resources)
 	}
 }
 
@@ -162,7 +149,7 @@ func handleDelete() httprouter.Handle {
 		resMap := api.Store.Query()
 
 		// Read request, return error if applicable
-		if err := readJSON(ctx, req, idReq); err != nil {
+		if err := script.ReadJSON(ctx, req, idReq); err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 			log.Info("resources could not be deleted, could not read request")
 
@@ -180,7 +167,7 @@ func handleDelete() httprouter.Handle {
 		}
 
 		// Delete all resources from store
-		if applyFunc(resMap, api.Store.Delete) != nil {
+		if script.ApplyFunc(resMap, api.Store.Delete) != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			log.Info("internal server error while deleting resources")
 

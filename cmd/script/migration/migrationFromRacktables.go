@@ -63,38 +63,58 @@ func NewResourceAPI(factory zebra.ResourceFactory) *ResourceAPI {
 	}
 }
 
+func lowerLetters(thisOne string) string {
+	return strings.ToLower(thisOne)
+}
+
+func ComputeCase(name string) string {
+	typ := ""
+
+	if strings.Contains(name, "esx") {
+		typ = "compute.esx"
+	} else if strings.Contains(name, "jenkins") || strings.Contains(name, "server") || strings.Contains(name, "srv") || strings.Contains(name, "vintella") {
+		typ = "compute.server"
+	} else if strings.Contains(name, "datacenter") || strings.Contains(name, "dc") || strings.Contains(name, "bld") {
+		typ = "dc.datacenter"
+	} else if strings.Contains(name, "dmz") || strings.Contains(name, "vlan") || strings.Contains(name, "asa") || strings.Contains(name, "bridge") {
+		typ = "network.vlanPool"
+	} else if strings.Contains(name, "vleaf") || strings.Contains(name, "switch") || strings.Contains(name, "sw") || strings.Contains(name, "aci") {
+		typ = "network.switch"
+	} else if strings.Contains(name, "vm") || strings.Contains(name, "capic") || strings.Contains(name, "frodo") {
+		typ = "compute.vm"
+	} else if strings.Contains(name, "vapic") || strings.Contains(name, "vpod") {
+		typ = "compute.vcenter"
+	} else if strings.Contains(name, "ipc") {
+		typ = "network.ipAddressPool"
+	}
+
+	return typ
+}
+
+func OtherCase(name string) string {
+	this := ""
+
+	if strings.Contains(name, "chasis") || strings.Contains(name, "ixia") || strings.Contains(name, "rack") {
+		this = "dc.rack"
+	} else if strings.Contains(name, "nexus") || strings.Contains(name, "sw") || strings.Contains(name, "switch") || strings.Contains(name, "n3k") {
+		this = "network.switch"
+	}
+
+	return this
+}
+
 // Determine the specific type of a resource.
 // nolint
 func determineType(means string, resName string) string {
-	name := strings.ToLower(resName)
+	name := lowerLetters(resName)
 	typ := ""
 
 	if means == "Shelf" {
 		typ = "dc.rack"
 	} else if means == "Compute" {
-		if strings.Contains(name, "esx") {
-			typ = "compute.esx"
-		} else if strings.Contains(name, "jenkins") || strings.Contains(name, "server") || strings.Contains(name, "srv") || strings.Contains(name, "vintella") {
-			typ = "compute.server"
-		} else if strings.Contains(name, "datacenter") || strings.Contains(name, "dc") || strings.Contains(name, "bld") {
-			typ = "dc.datacenter"
-		} else if strings.Contains(name, "dmz") || strings.Contains(name, "vlan") || strings.Contains(name, "asa") || strings.Contains(name, "bridge") {
-			typ = "network.vlanPool"
-		} else if strings.Contains(name, "vleaf") || strings.Contains(name, "switch") || strings.Contains(name, "sw") || strings.Contains(name, "aci") {
-			typ = "network.switch"
-		} else if strings.Contains(name, "vm") || strings.Contains(name, "capic") || strings.Contains(name, "frodo") {
-			typ = "compute.vm"
-		} else if strings.Contains(name, "vapic") || strings.Contains(name, "vpod") {
-			typ = "compute.vcenter"
-		} else if strings.Contains(name, "ipc") {
-			typ = "network.ipAddressPool"
-		}
+		typ = ComputeCase(name)
 	} else if means == "Other" {
-		if strings.Contains(name, "chasis") || strings.Contains(name, "ixia") || strings.Contains(name, "rack") {
-			typ = "dc.rack"
-		} else if strings.Contains(name, "nexus") || strings.Contains(name, "sw") || strings.Contains(name, "switch") || strings.Contains(name, "n3k") {
-			typ = "network.switch"
-		}
+		typ = OtherCase(name)
 	} else {
 		typ = means
 	}
@@ -138,6 +158,27 @@ func determineIDMeaning(id string, name string) string {
 	return this
 }
 
+func SimpleOwnerFilter(resType string, ID string, db *sql.DB) (string, string) {
+	var IPdata string
+	var owner string
+
+	if strings.Contains(resType, "compute") || resType == "network.switch" {
+		IPdata = getIPDetaiLs(ID, db)
+
+		owner = getUserDetails(IPdata, db)
+
+		if IPdata == "" || net.ParseIP(IPdata) == nil {
+			IPdata = "127.0.0.1"
+		}
+	} else {
+		IPdata = "127.0.0.1"
+
+		owner = "null"
+	}
+
+	return IPdata, owner
+}
+
 //nolint:funlen, cyclop
 func Do() []Racktables {
 	var rt Racktables
@@ -171,21 +212,7 @@ func Do() []Racktables {
 		resType := determineIDMeaning(typeID, rt.Name)
 		rt.Type = resType
 
-		if strings.Contains(resType, "compute") || resType == "network.switch" {
-			rt.IP = getIPDetaiLs(rt.ID, db)
-
-			ownedBy := getUserDetails(rt.IP, db)
-			rt.Owner = ownedBy
-
-			if rt.IP == "" || net.ParseIP(rt.IP) == nil {
-				rt.IP = "127.0.0.1"
-			}
-		} else {
-			rt.IP = "127.0.0.1"
-
-			ownedBy := "null"
-			rt.Owner = ownedBy
-		}
+		rt.IP, rt.Owner = SimpleOwnerFilter(resType, rt.ID, db)
 
 		if resType == "network.switch" {
 			portInfo := getPortDetails(rt.ID, db)
@@ -340,9 +367,9 @@ func getPortDetails(objectID string, db *sql.DB) int {
 
 // Get rack details using the resource's specific ID.
 func getMoreDetails(objectID string, db *sql.DB) (string, string, string, string, string, string, string) {
-	var rt Racktables
-
 	var label sql.NullString
+
+	var rt Racktables
 
 	var assetNo sql.NullString
 
@@ -403,9 +430,9 @@ func getRackDetails(objID string, db *sql.DB) string {
 
 // Get row and location details based on rack info (rack ID).
 func getRowDetails(id string, db *sql.DB) (string, string, string) {
-	var rt Racktables
-
 	statement := "SELECT row_id, row_name, location_name FROM Rack WHERE id = ?"
+
+	var rt Racktables
 
 	// Execute the query
 	results, err := db.Query(statement, id)
@@ -427,9 +454,9 @@ func getRowDetails(id string, db *sql.DB) (string, string, string) {
 
 // Get owner / user details based on the resource's IP.
 func getUserDetails(resIP string, db *sql.DB) string {
-	var rt Racktables
-
 	statement := "SELECT user FROM IPv4Log WHERE ip = ?"
+
+	var rt Racktables
 
 	// Execute the query
 	results, err := db.Query(statement, resIP)

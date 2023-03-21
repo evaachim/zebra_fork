@@ -34,7 +34,7 @@ lint: ./.golangcilint.yaml
 
 .PHONY: simulator-setup
 simulator-setup: bin
-	rm -rf ./simulator/simulator-store && ./herd --store ./simulator/simulator-store && ./mig --migrate ./simulator/simulator-store
+	rm -rf ./simulator/simulator-store && ./herd --store ./simulator/simulator-store && ./migrate --migrate ./simulator/simulator-store
 	rm -f ./simulator/zebra-simulator.json
 	rm -f ./simulator/admin.yaml
 	./zebra -c ./simulator/admin.yaml config init https://127.0.0.1:6666

@@ -56,7 +56,9 @@ func execRootCmd() error {
 
 func main() {
 	// migration.Post() is to execute with API - github cannot access the DB and it affects the test check.
-	// migration.Post()
+
+	migration.Post()
+
 	if e := execRootCmd(); e != nil {
 		os.Exit(1)
 	}
@@ -72,19 +74,19 @@ func storeResources(resources []zebra.Resource, fs *store.FileStore) error {
 	return nil
 }
 
-func genResources(cmd *cobra.Command,
-	flag string,
+func genDbResources(cmd *cobra.Command,
+	flg string,
 	factory func(int) []zebra.Resource,
-	resources []zebra.Resource,
+	dbResources []zebra.Resource,
 ) []zebra.Resource {
-	n := intVal(cmd, flag)
-	r := factory(n)
+	num := intVal(cmd, flg)
+	res := factory(num)
 
-	fmt.Printf("generated %s: %d\n", flag, n)
+	fmt.Printf("generated %s: %d\n", flg, num)
 
-	resources = append(resources, r...)
+	dbResources = append(dbResources, res...)
 
-	return resources
+	return dbResources
 }
 
 // run for each resource.
@@ -93,7 +95,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	fs := initStore(rootDir)
 	resources := make([]zebra.Resource, 0, Max)
 
-	resources = genResources(cmd, "db-res", migration.DBData, resources)
+	resources = genDbResources(cmd, "db-res", migration.DBData, resources)
 
 	return storeResources(resources, fs)
 }
