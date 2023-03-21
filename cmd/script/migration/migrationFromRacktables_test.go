@@ -1,16 +1,13 @@
 package migration //nolint:testpackage
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"testing"
 
-	"github.com/project-safari/zebra/script"
+	"github.com/project-safari/zebra/cmd/script"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -297,28 +294,11 @@ func (f fakeReader) Read(b []byte) (int, error) {
 	return 0, io.EOF
 }
 
-func makeLabelRequest(assert *assert.Assertions, resources *ResourceAPI, labels ...string) *http.Request {
-	ctx := context.WithValue(context.Background(), ResourcesCtxKey, resources)
-	ctx = context.WithValue(ctx, script.AuthCtxKey, "testKey")
-
-	req, err := http.NewRequestWithContext(ctx, "GET", "/api/v1/labels", nil)
-	assert.Nil(err)
-	assert.NotNil(req)
-
-	v := map[string][]string{"labels": labels}
-	b, e := json.Marshal(v)
-	assert.Nil(e)
-
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-
-	return req
-}
-
 func TestReadJSON(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
-	req := makeLabelRequest(assert, nil, "a", "b", "c")
+	req := script.MakeLabelRequest(assert, nil, "a", "b", "c")
 
 	labelReq := &struct {
 		Labels []string `json:"labels"`
