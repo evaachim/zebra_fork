@@ -64,6 +64,6 @@ func TestRack(t *testing.T) {
 	r.Meta.Type.Name = name
 	assert.Equal(zebra.ErrWrongType, r.Validate(ctx))
 
-	r = dc.NewRack("test_row", "test_row_id", "test_rack", "test_location", "test_owner", "test_group")
+	r = dc.NewRack("test_row", "4141(=test_row_id)", "AAB(=test_rack)", "SJC19/LAB121(=test_location)", "admin(=test_owner)", "mock-resources(=test_group)")
 	assert.Nil(r.Validate(ctx))
 }

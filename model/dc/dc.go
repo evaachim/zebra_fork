@@ -138,9 +138,10 @@ func NewRack(row, rowID, name, locate, owner, group string) *Rack {
 		Row:          row,
 		// added info to correspond to data in the db.
 		RowID: rowID,
-		// Asset: assets,
-		// Problems: prob,
-		// Comment:  comments,
+		/*
+			Fields that might need to be added in the future:
+			Asset (as assets), Problems (as prob), Comment (as comments).
+		*/
 		Location: locate,
 	}
 }

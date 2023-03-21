@@ -17,8 +17,8 @@ import (
 	//nolint:gci
 
 	"github.com/project-safari/zebra"
+	"github.com/project-safari/zebra/cmd/script"
 	"github.com/project-safari/zebra/model/dc"
-	"github.com/project-safari/zebra/script"
 
 	// this is needed for mysql access.
 	_ "github.com/go-sql-driver/mysql"
@@ -247,6 +247,17 @@ func allData(rackArr []Racktables) {
 
 		_, _, eachRes := CreateResFromData(res)
 
+		// url to be changed ONLY IF  either one of the following 2 things happens:
+		//
+		// the remote access for the DB is NOT set.
+		//
+		// -- or --
+		//
+		// the MAIN url for all requests is NOT changed.
+		// may want to change the url to zebra.insieme.local/resources.
+		//
+		// ONE EASY solution is to create remote access to the DB
+		//
 		// Create new resource on zebra with post request.
 		req := createRequests("POST", "/resources", eachRes, myAPI)
 		rr := httptest.NewRecorder()

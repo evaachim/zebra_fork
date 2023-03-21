@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/project-safari/zebra"
+	"github.com/project-safari/zebra/cmd/script/migration"
 	"github.com/project-safari/zebra/model"
-	"github.com/project-safari/zebra/script/migration"
 	"github.com/project-safari/zebra/store"
 	"github.com/spf13/cobra"
 )

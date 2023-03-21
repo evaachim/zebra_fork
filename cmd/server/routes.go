@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/project-safari/zebra/script"
+	"github.com/project-safari/zebra/cmd/script"
 )
 
 // routeHandler returns a http handler that handles all routes under the
