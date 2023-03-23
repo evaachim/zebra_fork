@@ -50,6 +50,7 @@ func TestLab(t *testing.T) {
 	assert.Nil(l.Validate(ctx))
 }
 
+// Added some extra fields.
 // TestRack tests the *Rack Validate function with a pass and a fail case.
 func TestRack(t *testing.T) {
 	t.Parallel()

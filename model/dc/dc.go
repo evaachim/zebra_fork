@@ -132,6 +132,7 @@ func (r *Rack) Validate(ctx context.Context) error {
 	return r.BaseResource.Validate(ctx)
 }
 
+// Added some extra fields as per the db.
 func NewRack(row, rowID, name, locate, owner, group string) *Rack {
 	return &Rack{
 		BaseResource: *zebra.NewBaseResource(RackType(), name, owner, group),
