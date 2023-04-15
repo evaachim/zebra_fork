@@ -1,4 +1,4 @@
-package script //nolint:testpackage
+package main //nolint:testpackage
 
 import (
 	"context"
@@ -51,21 +51,21 @@ func TestReadJSON(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
-	req := MakeLabelRequest(assert, nil, "a", "b", "c")
+	req := makeLabelRequest(assert, nil, "a", "b", "c")
 
 	labelReq := &struct {
 		Labels []string `json:"labels"`
 	}{Labels: []string{}}
 
-	assert.Nil(ReadJSON(context.Background(), req, labelReq))
+	assert.Nil(readJSON(context.Background(), req, labelReq))
 
 	// Bad IO reader
 	req.Body = ioutil.NopCloser(fakeReader{err: true})
-	assert.NotNil(ReadJSON(context.Background(), req, nil))
+	assert.NotNil(readJSON(context.Background(), req, nil))
 
 	// Empty Body
 	req.Body = ioutil.NopCloser(fakeReader{err: false})
-	assert.NotNil(ReadJSON(context.Background(), req, nil))
+	assert.NotNil(readJSON(context.Background(), req, nil))
 }
 
 func TestWriteJSON(t *testing.T) {
@@ -78,9 +78,9 @@ func TestWriteJSON(t *testing.T) {
 		"foo": make(chan int),
 	}
 
-	WriteJSON(context.Background(), f, x)
+	writeJSON(context.Background(), f, x)
 	assert.Equal(http.StatusInternalServerError, f.status)
 
 	f.err = true
-	WriteJSON(context.Background(), f, 10)
+	writeJSON(context.Background(), f, 10)
 }

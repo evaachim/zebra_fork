@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/project-safari/zebra"
 	"github.com/project-safari/zebra/auth"
-	"github.com/project-safari/zebra/cmd/script"
 	"github.com/project-safari/zebra/model/user"
 	"gojini.dev/web"
 )
@@ -44,7 +43,7 @@ func loginAdapter() web.Adapter {
 				Email    string `json:"email"`
 			}{}
 
-			if err := script.ReadJSON(ctx, req, userData); err != nil {
+			if err := readJSON(ctx, req, userData); err != nil {
 				res.WriteHeader(http.StatusBadRequest)
 
 				return
@@ -111,5 +110,5 @@ func respondWithClaims(ctx context.Context, res http.ResponseWriter,
 	}{JWT: claims.JWT(authKey), Role: claims.Role, Email: claims.Email, Name: claims.Id}
 
 	http.SetCookie(res, makeCookie(resData.JWT))
-	script.WriteJSON(ctx, res, resData)
+	writeJSON(ctx, res, resData)
 }

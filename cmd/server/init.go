@@ -15,11 +15,6 @@ import (
 
 const ReadWriteOnly = 0o600
 
-// may want to change the urls to accomodate for the server.
-// this can be done, for example, IF remote access to the DB is NOT set,
-// form more details, see:
-//	"github.com/project-safari/zebra/cmd/script/migrationFromRacktables.go"
-
 func NewInitCmd() *cobra.Command {
 	initCmd := new(cobra.Command)
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/cmd/script"
 	"github.com/project-safari/zebra/model"
 )
 
@@ -19,7 +18,7 @@ func handleTypes() httprouter.Handle {
 			Types []string `json:"types"`
 		}{Types: []string{}}
 
-		if err := script.ReadJSON(ctx, req, typeReq); err != nil {
+		if err := readJSON(ctx, req, typeReq); err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 
 			return
@@ -40,6 +39,6 @@ func handleTypes() httprouter.Handle {
 			}
 		}
 
-		script.WriteJSON(ctx, res, typeRes)
+		writeJSON(ctx, res, typeRes)
 	}
 }

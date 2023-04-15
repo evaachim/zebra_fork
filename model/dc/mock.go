@@ -45,10 +45,10 @@ func MockRack(num int) []zebra.Resource {
 
 	for i := 1; i <= num; i++ {
 		s := NewRack(
-			fmt.Sprintf("mock-row-%d", i%maxRow), // row.
-			fmt.Sprintf("mock-lab-%d", i),        // name.
-			"mocker",                             // owner.
-			"rack",                               // group.
+			fmt.Sprintf("mock-row-%d", i%maxRow),
+			fmt.Sprintf("mock-lab-%d", i),
+			"mocker",
+			"rack",
 		)
 
 		rs = append(rs, s)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/cmd/script"
 )
 
 func handleLabels() httprouter.Handle {
@@ -23,7 +22,7 @@ func handleLabels() httprouter.Handle {
 			Labels []string `json:"labels"`
 		}{Labels: []string{}}
 
-		if err := script.ReadJSON(ctx, req, labelReq); err != nil {
+		if err := readJSON(ctx, req, labelReq); err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 
 			return
@@ -44,7 +43,7 @@ func handleLabels() httprouter.Handle {
 		rMap := api.Store.Query()
 		labelRes.Labels = matchLabels(matchSet, rMap)
 
-		script.WriteJSON(ctx, res, labelRes)
+		writeJSON(ctx, res, labelRes)
 	}
 }
 

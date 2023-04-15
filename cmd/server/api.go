@@ -8,7 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/julienschmidt/httprouter"
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/cmd/script"
+	"github.com/project-safari/zebra/model"
 	"github.com/project-safari/zebra/store"
 )
 
@@ -60,11 +60,39 @@ func (api *ResourceAPI) Initialize(storageRoot string) error {
 	return api.Store.Initialize()
 }
 
+// Apply given function f to each resource in resMap.
+// Return error if it occurrs or nil if successful.
+func applyFunc(resMap *zebra.ResourceMap, f func(zebra.Resource) error) error {
+	for _, l := range resMap.Resources {
+		for _, r := range l.Resources {
+			if err := f(r); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Validate all queries in given slice.
 func validateQueries(queries []zebra.Query) error {
 	for _, q := range queries {
 		if err := q.Validate(); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate all resources in a resource map.
+func validateResources(ctx context.Context, resMap *zebra.ResourceMap) error {
+	// Check all resources to make sure they are valid
+	for _, l := range resMap.Resources {
+		for _, r := range l.Resources {
+			if err := r.Validate(ctx); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -86,7 +114,7 @@ func handleQuery() httprouter.Handle {
 		qr := new(QueryRequest)
 
 		// Read request, return error if applicable
-		if err := script.ReadJSON(ctx, req, qr); err != nil && !errors.Is(err, script.ErrEmptyBody) {
+		if err := readJSON(ctx, req, qr); err != nil && !errors.Is(err, ErrEmptyBody) {
 			res.WriteHeader(http.StatusBadRequest)
 			log.Info("resources could not be queried, could not read request")
 
@@ -127,7 +155,50 @@ func handleQuery() httprouter.Handle {
 		log.Info("successfully queried resources")
 
 		// Write response body
-		script.WriteJSON(ctx, res, resources)
+		writeJSON(ctx, res, resources)
+	}
+}
+
+func handlePost() httprouter.Handle {
+	return func(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		ctx := req.Context()
+		log := logr.FromContextOrDiscard(ctx)
+		api, ok := ctx.Value(ResourcesCtxKey).(*ResourceAPI)
+
+		if !ok {
+			res.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		resMap := zebra.NewResourceMap(model.Factory())
+
+		// Read request, return error if applicable
+		if err := readJSON(ctx, req, resMap); err != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			log.Info("resources could not be created, could not read request")
+
+			return
+		}
+
+		if validateResources(ctx, resMap) != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			log.Info("resources could not be created, found invalid resource(s)")
+
+			return
+		}
+
+		// Add all resources to store
+		if applyFunc(resMap, api.Store.Create) != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			log.Info("internal server error while creating resources")
+
+			return
+		}
+
+		log.Info("successfully created resources")
+
+		res.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -143,23 +214,17 @@ func handleDelete() httprouter.Handle {
 			return
 		}
 
-		idReq := &struct {
-			IDs []string `json:"ids"`
-		}{}
-		resMap := api.Store.Query()
+		resMap := zebra.NewResourceMap(model.Factory())
 
 		// Read request, return error if applicable
-		if err := script.ReadJSON(ctx, req, idReq); err != nil {
+		if err := readJSON(ctx, req, resMap); err != nil {
 			res.WriteHeader(http.StatusBadRequest)
 			log.Info("resources could not be deleted, could not read request")
 
 			return
 		}
 
-		idStore := store.NewIDStore(resMap)
-		resMap = idStore.Query(idReq.IDs)
-
-		if len(idReq.IDs) == 0 {
+		if validateResources(ctx, resMap) != nil {
 			res.WriteHeader(http.StatusBadRequest)
 			log.Info("resources could not be deleted, found invalid resource(s)")
 
@@ -167,7 +232,7 @@ func handleDelete() httprouter.Handle {
 		}
 
 		// Delete all resources from store
-		if script.ApplyFunc(resMap, api.Store.Delete) != nil {
+		if applyFunc(resMap, api.Store.Delete) != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 			log.Info("internal server error while deleting resources")
 
