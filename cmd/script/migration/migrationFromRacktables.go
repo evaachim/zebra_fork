@@ -1,67 +1,51 @@
 // Migration Script for data - it can be used to fetch,
-// add, and use the data inside zebra.
+// add, and use the data inside zebra.package migration
 package migration
 
 import (
 	"bytes"
-	"context"
+	"crypto/tls"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
-	"net/http/httptest"
+	"os"
+	"reflect"
 	"strings"
+	"time"
 
 	//nolint:gci
 
 	"github.com/project-safari/zebra"
-	"github.com/project-safari/zebra/cmd/script"
-	"github.com/project-safari/zebra/model/dc"
 
 	// this is needed for mysql access.
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Racktables struct is the struct that contains info from the racktables table in the mysql db.
-//
-// It contains the id, ip, name, and type of the item in the racktable.
 type Racktables struct {
-	ID        string `json:"object_id"` //nolint:tagliatelle
-	Name      string `json:"name"`
-	Label     string `json:"label"`
-	ObjtypeID string `json:"objtypeId"`
-	AssetNo   string `json:"assetNo"`
-	Problems  string `json:"hasProblems"`
-	Comments  string `json:"comment"`
-	IP        string `json:"ip"`
-	Type      string `json:"type"`
-	Port      int    `json:"port"`
-	RackID    string `json:"rackId"`
-	RowName   string `json:"rowName"`
-	Owner     string `json:"owner"`
-	RowID     string `json:"rowId"`
-	Location  string `json:"locationName"`
+	ID        string     `json:"object_id"` //nolint:tagliatelle
+	Name      string     `json:"name"`
+	Label     string     `json:"label"`
+	ObjtypeID string     `json:"objtypeId"`
+	AssetNo   string     `json:"assetNo"`
+	Problems  string     `json:"hasProblems"`
+	Comments  string     `json:"comment"`
+	IP        string     `json:"ip"`
+	Type      zebra.Type `json:"type"`
+	Port      int        `json:"port"`
+	RackID    string     `json:"rackId"`
+	RowName   string     `json:"rowName"`
+	Owner     string     `json:"owner"`
+	RowID     string     `json:"rowId"`
+	Location  string     `json:"locationName"`
+	Serial    string     `json:"serialNumber"`
 }
 
-type ResourceAPI struct {
-	factory zebra.ResourceFactory
-	Store   zebra.Store
-}
-
-type CtxKey string
-
-const (
-	ResourcesCtxKey = CtxKey("resources")
-)
-
-func NewResourceAPI(factory zebra.ResourceFactory) *ResourceAPI {
-	return &ResourceAPI{
-		factory: factory,
-		Store:   nil,
-	}
-}
+/* Beginning of Data filtering for migration. */
 
 func lowerLetters(thisOne string) string {
 	return strings.ToLower(thisOne)
@@ -86,6 +70,8 @@ func ComputeCase(name string) string {
 		typ = "compute.vcenter"
 	} else if strings.Contains(name, "ipc") {
 		typ = "network.ipAddressPool"
+	} else {
+		typ = "N/A"
 	}
 
 	return typ
@@ -107,7 +93,7 @@ func OtherCase(name string) string {
 // nolint
 func determineType(means string, resName string) string {
 	name := lowerLetters(resName)
-	typ := ""
+	typ := "N/A"
 
 	if means == "Shelf" {
 		typ = "dc.rack"
@@ -179,14 +165,84 @@ func SimpleOwnerFilter(resType string, ID string, db *sql.DB) (string, string) {
 	return IPdata, owner
 }
 
-//nolint:funlen, cyclop
-func Do() []Racktables {
+func checkEmpty(rt *Racktables) {
+	if reflect.ValueOf(rt.AssetNo).IsZero() {
+		rt.AssetNo = "NA"
+	}
+
+	if reflect.ValueOf(rt.Comments).IsZero() {
+		rt.Comments = "NA"
+	}
+
+	if reflect.ValueOf(rt.ID).IsZero() {
+		rt.ID = "NA"
+	}
+
+	if reflect.ValueOf(rt.Location).IsZero() {
+		rt.Location = "NA"
+	}
+
+	if reflect.ValueOf(rt.Name).IsZero() {
+		rt.Name = "N/A"
+	}
+
+	if reflect.ValueOf(rt.ObjtypeID).IsZero() {
+		rt.ObjtypeID = "NA"
+	}
+
+	if reflect.ValueOf(rt.Owner).IsZero() {
+		rt.Owner = "NA"
+	}
+
+	if reflect.ValueOf(rt.Port).IsZero() {
+		rt.Port = 0
+	}
+
+	if reflect.ValueOf(rt.Problems).IsZero() {
+		rt.Problems = "NA"
+	}
+
+	if reflect.ValueOf(rt.RackID).IsZero() {
+		rt.RackID = "NA"
+	}
+
+	if reflect.ValueOf(rt.RowID).IsZero() {
+		rt.RowID = "NA"
+	}
+
+	if reflect.ValueOf(rt.RowName).IsZero() {
+		rt.RowName = "NA"
+	}
+
+	if reflect.ValueOf(rt.Type).IsZero() {
+		rt.Type.Name = "NA"
+		rt.Type.Description = "Not there ..."
+	}
+
+	if reflect.ValueOf(rt.IP).IsZero() {
+		rt.IP = "1.1.1.1"
+	}
+
+	if reflect.ValueOf(rt.Label).IsZero() {
+		rt.Label = "system.group"
+	}
+
+	if reflect.ValueOf(rt.Serial).IsZero() {
+		rt.Serial = "NA"
+	}
+}
+
+/* End of Data filtering for migration */
+
+/* Beginning of data assignment for migration */
+
+func Does() {
 	var rt Racktables
 
 	RackArr := []Racktables{}
 
-	// Statement to query the db - currently only one rack, 76.
-	statement := "SELECT rack_id, object_id  FROM rackspace WHERE rack_id = 76"
+	// Statement to query the db .
+	statement := "SELECT rack_id, object_id  FROM rackspace"
 	// to be filled in with appropriate user, password, and db name.
 	db, err := sql.Open("mysql", "username:1234@/racktables")
 	// if there is an error opening the connection, handle it
@@ -199,7 +255,7 @@ func Do() []Racktables {
 	// Execute the query
 	results, err := db.Query(statement)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 
 	for results.Next() {
@@ -210,7 +266,17 @@ func Do() []Racktables {
 
 		typeID := rt.ObjtypeID
 		resType := determineIDMeaning(typeID, rt.Name)
-		rt.Type = resType
+		rt.Type.Name = resType
+		rt.Type.Description = "migrated " + resType
+
+		if reflect.ValueOf(rt.Type).IsZero() {
+			rt.Type.Name = "NA"
+			rt.Type.Description = "Not there ..."
+		}
+
+		if reflect.ValueOf(rt.Serial).IsZero() {
+			rt.Serial = "NA"
+		}
 
 		rt.IP, rt.Owner = SimpleOwnerFilter(resType, rt.ID, db)
 
@@ -238,6 +304,8 @@ func Do() []Racktables {
 		notes := rt.Comments
 		rt.Comments = notes
 
+		checkEmpty(&rt)
+
 		RackArr = append(RackArr, rt)
 
 		if err != nil {
@@ -245,65 +313,149 @@ func Do() []Racktables {
 		}
 	}
 
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
 	allData(RackArr)
-
-	return RackArr
 }
 
-func Post() {
-	postData := Do()
-	allData(postData)
+func getToken() *http.Cookie {
+	loginData := getAuth()
+
+	fmt.Println("Got this from getAuth(): ", loginData)
+	tokenData := &struct {
+		JWT string `json:"jwt"`
+	}{}
+
+	err := json.Unmarshal(loginData, tokenData)
+	if err != nil {
+		fmt.Println("Got an error when unmarshaling login data")
+	}
+
+	cookie := &http.Cookie{
+		Name:  "jwt",
+		Value: tokenData.JWT,
+	}
+
+	return cookie
+}
+
+func getAuth() []byte {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	serverLoginUrl := "https://zebra.insieme.local:8000/login"
+
+	migrationUser := []byte(`{
+		"name":"admin",
+		"password":"Riddikulus",
+		"email":"admin@zebra.project-safari.io"
+	}`)
+
+	reader := bytes.NewReader(migrationUser)
+	request, err := http.NewRequest("POST", serverLoginUrl, reader)
+	if err != nil {
+		fmt.Println("\nToken request got an error. This is it : ", err)
+		os.Exit(1)
+	}
+
+	request.Close = true
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Print("\nToken resp got an error. This is it : ", err, "\n")
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	loginBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	fmt.Println("The response from the login is: ", resp.StatusCode)
+
+	return loginBody
+}
+
+func PostIt() {
+	Does()
+	fmt.Println("\nDone with the migration!")
+}
+
+// Function that helps enforce minimum length for res. info.
+func addChars(kind string, toAdd string) string {
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	many := 0
+
+	if strings.ToLower(kind) == "id" {
+		many = 7 - len(toAdd) + 1
+	}
+
+	if strings.ToLower(kind) == "password" {
+		many = 15 - len(toAdd) + 1
+	}
+
+	chars := make([]byte, many)
+	for i := range chars {
+		chars[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
+	}
+
+	extendedStr := toAdd + string(chars)
+
+	return extendedStr
 }
 
 func allData(rackArr []Racktables) {
-	factory := zebra.Factory()
-
-	myAPI := NewResourceAPI(factory)
-
-	h := script.HandlePost()
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h(w, r, nil)
-	})
+	serverUrl := "https://zebra.insieme.local:8000/api/v1/resources"
+	token := getToken()
+	var postIt []byte
+	var res Racktables
 
 	for i := 0; i < (len(rackArr)); i++ {
-		res := rackArr[i]
+		res = rackArr[i]
 
-		_, _, eachRes := CreateResFromData(res)
+		postIt = CreateResFromData(res)
 
-		// url to be changed ONLY IF  either one of the following 2 things happens:
-		//
-		// the remote access for the DB is NOT set.
-		//
-		// -- or --
-		//
-		// the MAIN url for all requests is NOT changed.
-		// may want to change the url to zebra.insieme.local/resources.
-		//
-		// ONE EASY solution is to create remote access to the DB
-		//
-		// Create new resource on zebra with post request.
-		req := createRequests("POST", "/resources", eachRes, myAPI)
-		rr := httptest.NewRecorder()
-		handler.ServeHTTP(rr, req)
+		postable := bytes.NewReader(postIt)
+
+		time.Sleep(20 * time.Millisecond)
+		createRequests("POST", serverUrl, postable, token)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 
-func createRequests(method string, url string,
-	body string, api *ResourceAPI,
-) *http.Request {
-	ctx := context.WithValue(context.Background(), ResourcesCtxKey, api)
-	req, _ := http.NewRequestWithContext(ctx, method, url, nil)
+func createRequests(method string, url string, body *bytes.Reader, token *http.Cookie) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	if body != "" {
-		req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
-		print("Posted   ", body, "  successfully!\n")
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		log.Printf("An error occured in the request. That is: %s", err)
+		os.Exit(1)
 	}
 
-	return req
+	req.Header.Set("Content-Type", "application/json")
+
+	req.Header.Set("Authorization", token.Value)
+
+	req.AddCookie(token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		fmt.Printf("An error occurred in client. That's it: %s", err)
+	} else if err == nil {
+
+		_, err := ioutil.ReadAll(res.Body)
+		fmt.Println("\n\nThis is the response itself: ", res)
+		fmt.Println(res.StatusCode)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // Get IPs from db based on type id.
@@ -317,7 +469,7 @@ func getIPDetaiLs(objectID string, db *sql.DB) string {
 	// Execute the query
 	results, err := db.Query(statement, objectID)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 
 	defer results.Close()
@@ -329,7 +481,7 @@ func getIPDetaiLs(objectID string, db *sql.DB) string {
 		rt.IP = IPnum
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
 	}
 
@@ -477,85 +629,76 @@ func getUserDetails(resIP string, db *sql.DB) string {
 	return rt.Owner
 }
 
-// Function to create a resource given data obtained from db, guven a certain type.
-//
-// Returns a zebra.Resource and a string version of the resource struct to be used with APIs.
-//
-//nolint:cyclop, funlen
-func CreateResFromData(res Racktables) (zebra.Resource, string, string) {
+/* End of migration  */
+
+/* Beginning of resource creation */
+
+func CreateResFromData(res Racktables) []byte {
 	resType := res.Type
 
-	switch resType {
+	switch resType.Name {
 	case "dc.dataceneter":
-		addR := dc.NewDatacenter(res.Location, res.Name, res.Owner, "system.group-datacenter")
+		theData := dcFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "dc", this
+		return body
 
 	case "dc.lab":
-		addR := dc.NewLab(res.Name, res.Owner, "system.group-datacenter-lab")
+		theData := labFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "lab", this
+		return body
 
 	case "dc.rack", "dc.shelf":
-		addR := dc.NewRack(res.RowName, res.RowID, res.Name, res.Location, res.Owner, "system.group-datacenter-lab-rack")
+		theData := rackFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "rack", this
+		return body
 
 	case "compute.server":
-		addR := serverFiller(res)
+		theData := serverFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "server", this
+		return body
 
 	case "compute.esx":
-		addR := esxFiller(res)
+		theData := esxFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "esx", this
+		return body
 
 	case "compute.vm":
-		addR := vmFiller(res)
+		theData := vmFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "vm", this
+		return body
 
 	case "compute.vceneter":
-		addR := vcenterFiller(res)
+		theData := vcenterFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "vcenter", this
+		return body
 
 	case "network.switch":
-		addR := switchFiller(res)
+		theData := switchFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "switch", this
+		return body
 
 	case "network.ipaddresspool":
-		addR := addressPoolFiller(res)
+		theData := addressPoolFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "ip-address-pool", this
+		return body
 
 	case "network.vlanpool":
-		addR := vlanFiller(res)
+		theData := vlanFiller(res)
+		body, _ := json.Marshal(theData)
 
-		this := fmt.Sprintf("%v", addR)
-
-		return addR, "vlan-pool", this
+		return body
 	}
 
-	return nil, "", ""
+	return nil
 }
+
+/* End of resource creation */
