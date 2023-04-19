@@ -105,7 +105,6 @@ func EmptyRack() zebra.Resource {
 // row.
 type Rack struct {
 	zebra.BaseResource
-	// Might want to change the json to row_name to distinguish and to match the db data.
 	Row string `json:"row"`
 }
 

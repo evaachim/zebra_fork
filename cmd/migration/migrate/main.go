@@ -5,7 +5,7 @@ import (
 
 	"net/http"
 
-	"github.com/project-safari/zebra/cmd/script/migration"
+	"github.com/project-safari/zebra/cmd/migration"
 )
 
 func main() {
