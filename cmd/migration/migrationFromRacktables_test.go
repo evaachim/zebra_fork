@@ -1,3 +1,4 @@
+// nolint: funlen // Some functions need to be longer.
 package migration //nolint:testpackage
 
 import (

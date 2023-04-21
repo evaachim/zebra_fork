@@ -1,4 +1,4 @@
-// nolint: gosec. // Using this script for a secure server with a secure jwt token.
+// nolint: gosec, forcetypeassert // Using this script for a secure server with a secure jwt token.
 package main
 
 import (

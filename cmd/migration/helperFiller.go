@@ -1,4 +1,4 @@
-//nolint:gomnd, goconst, tagliatelle // Using json that is appropiate to the server.
+//nolint:gomnd, goconst, funlen, unconvert, tagliatelle // Using json that is appropriate to the server.
 package migration
 
 import (

@@ -1,6 +1,6 @@
 // Migration Script for data - it can be used to fetch,
 // add, and use the data inside zebra.package migration
-// nolint:goconst, gocritic, gosec, tagliatelle // Using json names appropiate for the server.
+// nolint:goconst, gocritic, gosec,  funlen, forcetypeassert, cyclop, lll // Using json names appropriate for the server, POST request with a jwt secure token, and some functions need to be longer.
 package migration
 
 import (
@@ -358,6 +358,8 @@ func getToken() *http.Cookie {
 func getAuth() []byte {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
+	tokenTime := 30
+
 	serverLoginURL := "https://zebra.insieme.local:8000/login"
 
 	migrationUser := []byte(`{
@@ -367,6 +369,7 @@ func getAuth() []byte {
 	}`)
 
 	reader := bytes.NewReader(migrationUser)
+
 	request, err := http.NewRequest("POST", serverLoginURL, reader)
 	if err != nil {
 		fmt.Println("\nToken request got an error. This is it : ", err)
@@ -378,7 +381,7 @@ func getAuth() []byte {
 	request.Header.Set("Content-Type", "application/json")
 
 	client := http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: time.Duration(tokenTime) * time.Second,
 	}
 
 	resp, err := client.Do(request)
@@ -458,7 +461,7 @@ func createRequests(method string, url string, body *bytes.Reader, token *http.C
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		log.Printf("An error ocurred in the request. That is: %s", err)
+		log.Printf("An error occurred in the request. That is: %s", err)
 		os.Exit(1)
 	}
 
@@ -477,6 +480,7 @@ func createRequests(method string, url string, body *bytes.Reader, token *http.C
 		_, err := ioutil.ReadAll(res.Body)
 		fmt.Println("\n\nThis is the response itself: ", res)
 		fmt.Println(res.StatusCode)
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -664,6 +668,7 @@ func CreateResFromData(res Racktables) []byte {
 	switch resType.Name {
 	case "dc.dataceneter":
 		theData := dcFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -673,6 +678,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case "dc.lab":
 		theData := labFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -682,6 +688,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case rackType, "dc.shelf":
 		theData := rackFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -691,6 +698,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case serverType:
 		theData := serverFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -700,6 +708,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case esxType:
 		theData := esxFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -709,6 +718,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case vmType:
 		theData := vmFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -718,6 +728,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case "compute.vceneter":
 		theData := vcenterFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -727,6 +738,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case swType:
 		theData := switchFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -736,6 +748,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case "network.ipaddresspool":
 		theData := addressPoolFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
@@ -745,6 +758,7 @@ func CreateResFromData(res Racktables) []byte {
 
 	case "network.vlanpool":
 		theData := vlanFiller(res)
+
 		body, err := json.Marshal(theData)
 		if err != nil {
 			fmt.Println("Encountered issues when unmarshaling POST data.")
