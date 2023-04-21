@@ -1,5 +1,6 @@
 // Migration Script for data - it can be used to fetch,
 // add, and use the data inside zebra.package migration
+// nolint:goconst, gocritic, gosec, tagliatelle // Using json names appropiate for the server.
 package migration
 
 import (
@@ -24,6 +25,19 @@ import (
 
 	// this is needed for mysql access.
 	_ "github.com/go-sql-driver/mysql"
+)
+
+const (
+	serverType        = "compute.server"
+	rackType          = "dc.rack"
+	vmType            = "compute.vm"
+	swType            = "network.switch"
+	esxType           = "compute.esx"
+	vcType            = "compute.vcenter"
+	vlanType          = "network.vlanPool"
+	IPpoolType        = "network.ipAddressPool"
+	minPasswordLength = 15
+	minIDlength       = 7
 )
 
 type Racktables struct {
@@ -51,25 +65,26 @@ func lowerLetters(thisOne string) string {
 	return strings.ToLower(thisOne)
 }
 
+// nolint: lll, cyclop
 func ComputeCase(name string) string {
 	typ := ""
 
 	if strings.Contains(name, "esx") {
-		typ = "compute.esx"
+		typ = esxType
 	} else if strings.Contains(name, "jenkins") || strings.Contains(name, "server") || strings.Contains(name, "srv") || strings.Contains(name, "vintella") {
-		typ = "compute.server"
+		typ = serverType
 	} else if strings.Contains(name, "datacenter") || strings.Contains(name, "dc") || strings.Contains(name, "bld") {
 		typ = "dc.datacenter"
 	} else if strings.Contains(name, "dmz") || strings.Contains(name, "vlan") || strings.Contains(name, "asa") || strings.Contains(name, "bridge") {
-		typ = "network.vlanPool"
+		typ = vlanType
 	} else if strings.Contains(name, "vleaf") || strings.Contains(name, "switch") || strings.Contains(name, "sw") || strings.Contains(name, "aci") {
-		typ = "network.switch"
+		typ = swType
 	} else if strings.Contains(name, "vm") || strings.Contains(name, "capic") || strings.Contains(name, "frodo") {
-		typ = "compute.vm"
+		typ = vmType
 	} else if strings.Contains(name, "vapic") || strings.Contains(name, "vpod") {
-		typ = "compute.vcenter"
+		typ = vcType
 	} else if strings.Contains(name, "ipc") {
-		typ = "network.ipAddressPool"
+		typ = IPpoolType
 	} else {
 		typ = "N/A"
 	}
@@ -77,13 +92,14 @@ func ComputeCase(name string) string {
 	return typ
 }
 
+// nolint: lll
 func OtherCase(name string) string {
 	this := ""
 
 	if strings.Contains(name, "chasis") || strings.Contains(name, "ixia") || strings.Contains(name, "rack") {
-		this = "dc.rack"
+		this = rackType
 	} else if strings.Contains(name, "nexus") || strings.Contains(name, "sw") || strings.Contains(name, "switch") || strings.Contains(name, "n3k") {
-		this = "network.switch"
+		this = swType
 	}
 
 	return this
@@ -96,7 +112,7 @@ func determineType(means string, resName string) string {
 	typ := "N/A"
 
 	if means == "Shelf" {
-		typ = "dc.rack"
+		typ = rackType
 	} else if means == "Compute" {
 		typ = ComputeCase(name)
 	} else if means == "Other" {
@@ -116,15 +132,15 @@ func determineIDMeaning(id string, name string) string {
 	this := ""
 
 	if id == "2" || id == "27" {
-		means = "compute.vm"
+		means = vmType
 	} else if id == "30" || id == "31" || id == "34" || id == "3" {
-		means = "dc.rack"
+		means = rackType
 	} else if id == "38" {
-		means = "compute.vcenter"
+		means = vcType
 	} else if id == "4" || id == "13" || id == "36" {
-		means = "compute.server"
+		means = serverType
 	} else if id == "8" || id == "12" || id == "14" || id == "21" || id == "26" || id == "32" || id == "33" {
-		means = "network.switch"
+		means = swType
 	} else if id == "1504" {
 		means = "Compute"
 	} else if id == "1503" {
@@ -146,9 +162,10 @@ func determineIDMeaning(id string, name string) string {
 
 func SimpleOwnerFilter(resType string, ID string, db *sql.DB) (string, string) {
 	var IPdata string
+
 	var owner string
 
-	if strings.Contains(resType, "compute") || resType == "network.switch" {
+	if strings.Contains(resType, "compute") || resType == swType {
 		IPdata = getIPDetaiLs(ID, db)
 
 		owner = getUserDetails(IPdata, db)
@@ -280,7 +297,7 @@ func Does() {
 
 		rt.IP, rt.Owner = SimpleOwnerFilter(resType, rt.ID, db)
 
-		if resType == "network.switch" {
+		if resType == swType {
 			portInfo := getPortDetails(rt.ID, db)
 			rt.Port = portInfo
 		} else {
@@ -320,6 +337,7 @@ func getToken() *http.Cookie {
 	loginData := getAuth()
 
 	fmt.Println("Got this from getAuth(): ", loginData)
+
 	tokenData := &struct {
 		JWT string `json:"jwt"`
 	}{}
@@ -340,7 +358,7 @@ func getToken() *http.Cookie {
 func getAuth() []byte {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	serverLoginUrl := "https://zebra.insieme.local:8000/login"
+	serverLoginURL := "https://zebra.insieme.local:8000/login"
 
 	migrationUser := []byte(`{
 		"name":"admin",
@@ -349,7 +367,7 @@ func getAuth() []byte {
 	}`)
 
 	reader := bytes.NewReader(migrationUser)
-	request, err := http.NewRequest("POST", serverLoginUrl, reader)
+	request, err := http.NewRequest("POST", serverLoginURL, reader)
 	if err != nil {
 		fmt.Println("\nToken request got an error. This is it : ", err)
 		os.Exit(1)
@@ -388,14 +406,15 @@ func PostIt() {
 // Function that helps enforce minimum length for res. info.
 func addChars(kind string, toAdd string) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 	many := 0
 
 	if strings.ToLower(kind) == "id" {
-		many = 7 - len(toAdd) + 1
+		many = minIDlength - len(toAdd) + 1
 	}
 
 	if strings.ToLower(kind) == "password" {
-		many = 15 - len(toAdd) + 1
+		many = minPasswordLength - len(toAdd) + 1
 	}
 
 	chars := make([]byte, many)
@@ -409,10 +428,17 @@ func addChars(kind string, toAdd string) string {
 }
 
 func allData(rackArr []Racktables) {
-	serverUrl := "https://zebra.insieme.local:8000/api/v1/resources"
+	serverURL := "https://zebra.insieme.local:8000/api/v1/resources"
+
 	token := getToken()
+
 	var postIt []byte
+
 	var res Racktables
+
+	shortWait := 20
+
+	longWait := 50
 
 	for i := 0; i < (len(rackArr)); i++ {
 		res = rackArr[i]
@@ -421,9 +447,9 @@ func allData(rackArr []Racktables) {
 
 		postable := bytes.NewReader(postIt)
 
-		time.Sleep(20 * time.Millisecond)
-		createRequests("POST", serverUrl, postable, token)
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Duration(shortWait) * time.Millisecond)
+		createRequests("POST", serverURL, postable, token)
+		time.Sleep(time.Duration(longWait) * time.Millisecond)
 	}
 }
 
@@ -432,7 +458,7 @@ func createRequests(method string, url string, body *bytes.Reader, token *http.C
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		log.Printf("An error occured in the request. That is: %s", err)
+		log.Printf("An error ocurred in the request. That is: %s", err)
 		os.Exit(1)
 	}
 
@@ -448,7 +474,6 @@ func createRequests(method string, url string, body *bytes.Reader, token *http.C
 	if err != nil {
 		fmt.Printf("An error occurred in client. That's it: %s", err)
 	} else if err == nil {
-
 		_, err := ioutil.ReadAll(res.Body)
 		fmt.Println("\n\nThis is the response itself: ", res)
 		fmt.Println(res.StatusCode)
@@ -639,61 +664,91 @@ func CreateResFromData(res Racktables) []byte {
 	switch resType.Name {
 	case "dc.dataceneter":
 		theData := dcFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
 	case "dc.lab":
 		theData := labFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
-	case "dc.rack", "dc.shelf":
+	case rackType, "dc.shelf":
 		theData := rackFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
-	case "compute.server":
+	case serverType:
 		theData := serverFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
-	case "compute.esx":
+	case esxType:
 		theData := esxFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
-	case "compute.vm":
+	case vmType:
 		theData := vmFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
 	case "compute.vceneter":
 		theData := vcenterFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
-	case "network.switch":
+	case swType:
 		theData := switchFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
 	case "network.ipaddresspool":
 		theData := addressPoolFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 
 	case "network.vlanpool":
 		theData := vlanFiller(res)
-		body, _ := json.Marshal(theData)
+		body, err := json.Marshal(theData)
+		if err != nil {
+			fmt.Println("Encountered issues when unmarshaling POST data.")
+		}
 
 		return body
 	}

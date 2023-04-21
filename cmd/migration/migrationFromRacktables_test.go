@@ -1,8 +1,6 @@
 package migration //nolint:testpackage
 
 import (
-	"errors"
-	"io"
 	"testing"
 
 	"github.com/project-safari/zebra"
@@ -317,18 +315,4 @@ func TestFiller(t *testing.T) {
 
 	testVLANfiller := vlanFiller(rt)
 	assert.NotNil(testVLANfiller)
-}
-
-var errFake = errors.New("fake error")
-
-type fakeReader struct {
-	err bool
-}
-
-func (f fakeReader) Read(b []byte) (int, error) {
-	if f.err {
-		return 0, errFake
-	}
-
-	return 0, io.EOF
 }

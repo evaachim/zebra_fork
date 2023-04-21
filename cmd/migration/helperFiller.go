@@ -1,4 +1,4 @@
-//nolint:gomnd, goconst
+//nolint:gomnd, goconst, tagliatelle // Using json that is appropiate to the server.
 package migration
 
 import (
@@ -40,7 +40,7 @@ func esxFiller(rt Racktables) *ESXData {
 		user = rt.Owner
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -249,7 +249,7 @@ func vcenterFiller(rt Racktables) *VCData {
 		}
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -306,7 +306,7 @@ func serverFiller(rt Racktables) *ServerData {
 
 	thePassword := strings.ToUpper(user) + "123" + "%"
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -399,7 +399,8 @@ func vmFiller(rt Racktables) *VMData {
 	}
 
 	thePassword := strings.ToUpper(user) + "123" + "!"
-	if len(rt.ID) < 7 {
+
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -460,7 +461,7 @@ func labFiller(rt Racktables) *LabData {
 		user = "admin"
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -528,13 +529,13 @@ func dcFiller(rt Racktables) *DCData {
 	}
 
 	if len(theID) < 7 {
-		rt.ID = addChars("id", theID)
+		theID = addChars("id", theID)
 	}
 
 	myDatacenterArr := make([]ComputedDC, 0)
 
 	myMeta := &MetaData{
-		ID:                 rt.ID,
+		ID:                 theID,
 		TheType:            *myType,
 		CreationTime:       time.Now().Format("2006-01-02T15:04:05-07:00"),
 		ModifificationTime: time.Now().Format("2006-01-02T15:04:05-07:00"),
@@ -563,7 +564,7 @@ func rackFiller(rt Racktables) *RackData {
 
 	theID := rt.ID
 	if len(theID) < 7 {
-		rt.ID = addChars("id", theID)
+		theID = addChars("id", theID)
 	}
 
 	myLabels := &TheLabels{
@@ -571,7 +572,7 @@ func rackFiller(rt Racktables) *RackData {
 	}
 
 	myMeta := &MetaData{
-		ID:                 rt.ID,
+		ID:                 theID,
 		TheType:            *myType,
 		CreationTime:       time.Now().Format("2006-01-02T15:04:05-07:00"),
 		ModifificationTime: time.Now().Format("2006-01-02T15:04:05-07:00"),
@@ -605,7 +606,7 @@ func switchFiller(rt Racktables) *SwitchData {
 		user = "admin"
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -697,7 +698,7 @@ func addressPoolFiller(rt Racktables) *AddressPoolData {
 		SystemGroup: "ipAddrressPool",
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
@@ -744,7 +745,7 @@ func vlanFiller(rt Racktables) *VLANData {
 		SystemGroup: "Vlan",
 	}
 
-	if len(rt.ID) < 7 {
+	if len(rt.ID) < minIDlength {
 		rt.ID = addChars("id", rt.ID)
 	}
 
